@@ -1,0 +1,36 @@
+# syntax=docker/dockerfile:1
+
+ARG GOLANG_VERSION=1.25
+ARG DEBIAN_VERSION=trixie
+ARG PYTHON_VERSION=3.14
+
+FROM docker.io/library/golang:${GOLANG_VERSION}-${DEBIAN_VERSION} AS gobuilder
+
+RUN --mount=type=bind,source=./libmxclient,target=/build <<EOF
+cd /build
+CGO_ENABLED=1 GOARCH=${GOARCH} go build -buildmode=c-shared -o /pygomx-build/libmxclient.so .
+EOF
+
+FROM docker.io/library/python:${PYTHON_VERSION}-${DEBIAN_VERSION} AS pybuilder
+
+COPY --from=gobuilder /pygomx-build/libmxclient.so /usr/local/lib/libmxclient.so
+COPY --from=gobuilder /pygomx-build/libmxclient.h /usr/local/include/libmxclient.h
+
+RUN pip install cffi setuptools
+
+COPY pygomx /pygomx
+
+RUN <<EOF
+cd /pygomx
+python3 build_ffi.py
+ls -la
+EOF
+
+FROM docker.io/library/python:${PYTHON_VERSION}-${DEBIAN_VERSION}
+
+RUN pip install cffi
+
+COPY --from=gobuilder /pygomx-build/libmxclient.so /usr/local/lib/
+COPY --from=pybuilder /pygomx/_pygomx.cpython-314-x86_64-linux-gnu.so /usr/local/lib/python3.14/site-packages/
+RUN ldconfig
+
