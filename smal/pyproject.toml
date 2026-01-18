@@ -16,7 +16,7 @@ classifiers = [
 ]
 
 [tool.setuptools.package-dir]
-"pygomx" = "src/pygomx"
+"pymxutils" = "src/pymxutils"
 "smal" = "src/smal"
 "smbl" = "src/smbl"
 
@@ -27,9 +27,9 @@ repository = "https://codeberg.org/saces/pygomx"
 egg_base = "/tmp"
 
 [project.scripts]
-mxdiscover = "pygomx.mxutils:discoverhs"
-mxwhoami = "pygomx.mxutils:whoami"
-mxtoken = "pygomx.mxutils:mktoken"
-mxaccountinfo = "pygomx.mxutils:accountinfo"
-mxclearaccount = "pygomx.mxutils:clearaccount"
-mxserverinfo = "pygomx.mxutils:serverinfo"
+mxdiscover = "pymxutils.mxutils:discoverhs"
+mxwhoami = "pymxutils.mxutils:whoami"
+mxtoken = "pymxutils.mxutils:mktoken"
+mxaccountinfo = "pymxutils.mxutils:accountinfo"
+mxclearaccount = "pymxutils.mxutils:clearaccount"
+mxserverinfo = "pymxutils.mxutils:serverinfo"
