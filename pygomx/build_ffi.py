@@ -17,14 +17,14 @@ ffibuilder.cdef(
     typedef void (*on_message_handler_ptr) (char*);
     extern void  register_on_event_handler(on_event_handler_ptr ptr);
     extern void  register_on_message_handler(on_message_handler_ptr ptr);
-    extern void  FreeCString(char * s);
+    extern void  FreeCString(char* s);
     extern char* cli_discoverhs(char* mxid);
     extern char* cli_mkmxtoken(char* mxid, char* pw);
     extern char* cli_whoami(char* hs, char* accessToken);
     extern char* cli_accountinfo(char* hs, char* accessToken);
     extern char* cli_clearaccount(char* hs, char* accessToken);
     extern char* cli_serverinfo(char* url);
-    extern int createclient(char* url, char* userID, char* accessToken);
+    extern int   createclient(char* url, char* userID, char* accessToken);
     """
 )
 
