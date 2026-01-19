@@ -13,6 +13,10 @@ ffibuilder.set_source(
 
 ffibuilder.cdef(
     csource="""
+    typedef void (*on_event_handler_ptr) (char*);
+    typedef void (*on_message_handler_ptr) (char*);
+    extern void  register_on_event_handler(on_event_handler_ptr ptr);
+    extern void  register_on_message_handler(on_message_handler_ptr ptr);
     extern void  FreeCString(char * s);
     extern char* cli_discoverhs(char* mxid);
     extern char* cli_mkmxtoken(char* mxid, char* pw);
