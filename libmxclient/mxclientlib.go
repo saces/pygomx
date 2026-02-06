@@ -39,6 +39,7 @@ type CBClient struct {
 	on_event_handler_pobj   unsafe.Pointer
 	on_message_handler      C.on_message_handler_ptr
 	on_message_handler_pobj unsafe.Pointer
+	syncCancelFunc          context.CancelFunc
 }
 
 func (cli *CBClient) OnEvent(s string) {
@@ -69,7 +70,7 @@ func NewCBClient(homeserverURL string, userID id.UserID, accessToken string) (*C
 	if err != nil {
 		return nil, err
 	}
-	return &CBClient{client, nil, nil, nil, nil}, nil
+	return &CBClient{client, nil, nil, nil, nil, nil}, nil
 }
 
 /*
@@ -183,7 +184,7 @@ func apiv0_createclient(storage_path *C.char, url *C.char, userID *C.char, acces
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
-	client := &CBClient{mxclient, nil, nil, nil, nil}
+	client := &CBClient{mxclient, nil, nil, nil, nil, nil}
 	cclients = append(cclients, client)
 	return C.CString(fmt.Sprintf("{ \"id:\"SUCESS. ID=%d\n", len(cclients)))
 }
@@ -194,7 +195,7 @@ func apiv0_createclient_pass(mxpassfile_path *C.char, storage_path *C.char, url 
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
-	client := &CBClient{mxclient, nil, nil, nil, nil}
+	client := &CBClient{mxclient, nil, nil, nil, nil, nil}
 	mxclient.OnEvent = client.OnEvent
 	mxclient.OnMessage = client.OnMessage
 	cclients = append(cclients, client)
@@ -235,7 +236,10 @@ func apiv0_startclient(cid C.int) *C.char {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
 
-	err = cli.Sync()
+	ctx, cancel := context.WithCancel(context.Background())
+	cli.syncCancelFunc = cancel
+
+	err = cli.SyncWithContext(ctx)
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
@@ -249,7 +253,8 @@ func apiv0_stopclient(cid C.int) *C.char {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
 	cli.StopSync()
-	// TODO kill current sync request (client.client.http.cancel() or so)
+	cli.syncCancelFunc()
+
 	return C.CString("SUCCESS.")
 }
 
