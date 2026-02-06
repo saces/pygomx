@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"mxclientlib/mxapi"
 	"mxclientlib/mxclient"
@@ -30,6 +31,8 @@ static inline void call_c_on_message_handler(on_message_handler_ptr ptr, char* j
 */
 import "C"
 
+var apiCanceled = errors.New("canceled by api call")
+
 /*
 matrix client with c callback
 */
@@ -39,7 +42,7 @@ type CBClient struct {
 	on_event_handler_pobj   unsafe.Pointer
 	on_message_handler      C.on_message_handler_ptr
 	on_message_handler_pobj unsafe.Pointer
-	syncCancelFunc          context.CancelFunc
+	syncCancelFunc          context.CancelCauseFunc
 }
 
 func (cli *CBClient) OnEvent(s string) {
@@ -236,11 +239,19 @@ func apiv0_startclient(cid C.int) *C.char {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancelCause(context.Background())
 	cli.syncCancelFunc = cancel
 
 	err = cli.SyncWithContext(ctx)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			cause := context.Cause(ctx)
+			if errors.Is(cause, apiCanceled) {
+				return C.CString("SUCCESS.")
+			} else {
+				return C.CString(fmt.Sprintf("ERR: %v", cause))
+			}
+		}
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
 	return C.CString("SUCCESS.")
@@ -253,7 +264,7 @@ func apiv0_stopclient(cid C.int) *C.char {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
 	cli.StopSync()
-	cli.syncCancelFunc()
+	cli.syncCancelFunc(apiCanceled)
 
 	return C.CString("SUCCESS.")
 }
