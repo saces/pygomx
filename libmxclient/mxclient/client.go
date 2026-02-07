@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"mxclientlib/determinant/mxpassfile"
+	"slices"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rs/zerolog"
@@ -24,12 +25,76 @@ import (
 
 type MXClient struct {
 	*mautrix.Client
-	OnEvent   func(string)
-	OnMessage func(string)
+	OnEvent    func(string)
+	OnMessage  func(string)
+	_directMap map[id.RoomID][]id.UserID
 }
 
-func (mxc *MXClient) _onEvent(ctx context.Context, evt *event.Event) {
+func (mxc *MXClient) _onAccountDataDM(ctx context.Context, evt *event.Event) { // event.DirectChatsEventContent
+	// TODO
+	fmt.Printf("\nTODO: Got event account data dm: %#v\n", evt)
+}
+
+func (mxc *MXClient) AddDirectRoom(uid id.UserID, roomid id.RoomID) {
+	room, ok := mxc._directMap[roomid]
+	if ok {
+		if slices.Contains(room, uid) {
+			log.Error().Str("room", roomid.String()).Str("uid", uid.String()).Msg("direct mapping already exists.")
+		} else {
+			log.Warn().Str("room", roomid.String()).Str("uid", uid.String()).Msg("room already a dm.")
+			mxc._directMap[roomid] = append(room, uid)
+		}
+	} else {
+		mxc._directMap[roomid] = []id.UserID{uid}
+	}
+}
+
+func (mxc *MXClient) IsDirectRoom(roomid id.RoomID) bool {
+	_, ok := mxc._directMap[roomid]
+	return ok
+}
+
+func (mxc *MXClient) _loadDirectMap() error {
+	var directChats event.DirectChatsEventContent
+	err := mxc.GetAccountData(context.Background(), event.AccountDataDirectChats.Type, &directChats)
+	if err != nil {
+		return err
+	}
+
+	new_directMap := make(map[id.RoomID][]id.UserID)
+	for uid, rooms := range directChats {
+		for _, room := range rooms {
+			new_directMap[room] = append(new_directMap[room], uid)
+		}
+	}
+	mxc._directMap = new_directMap
+	return nil
+}
+
+func (mxc *MXClient) _storeDirectMap() error {
+	directChats := make(event.DirectChatsEventContent)
+
+	for room, uids := range mxc._directMap {
+		for _, uid := range uids {
+			directChats[uid] = append(directChats[uid], room)
+		}
+	}
+	err := mxc.SetAccountData(context.Background(), event.AccountDataDirectChats.Type, &directChats)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (mxc *MXClient) _onEventMember(ctx context.Context, evt *event.Event) {
 	if evt.GetStateKey() == mxc.UserID.String() && evt.Content.AsMember().Membership == event.MembershipInvite {
+		if evt.Content.AsMember().IsDirect {
+			mxc.AddDirectRoom(evt.Sender, evt.RoomID)
+			err := mxc._storeDirectMap()
+			if err != nil {
+				log.Error().Err(err).Msg("failed to store direct chats account data")
+			}
+		}
 		_, err := mxc.JoinRoomByID(ctx, evt.RoomID)
 		if err == nil {
 			log.Info().
@@ -43,16 +108,17 @@ func (mxc *MXClient) _onEvent(ctx context.Context, evt *event.Event) {
 				Msg("Failed to join room after invite")
 		}
 	} else {
-		fmt.Printf("Got event: %#v\n", evt)
+		fmt.Printf("\nGot member event: %#v\n", evt)
 	}
 }
 
 func (mxc *MXClient) _onMessage(ctx context.Context, evt *event.Event) {
-	out, err := json.Marshal(map[string]interface{}{"sender": evt.Sender.String(),
-		"type":    evt.Type.String(),
-		"id":      evt.ID.String(),
-		"roomid":  evt.RoomID.String(),
-		"content": evt.Content.Raw})
+	out, err := json.Marshal(map[string]any{"sender": evt.Sender.String(),
+		"type":      evt.Type.String(),
+		"id":        evt.ID.String(),
+		"roomid":    evt.RoomID.String(),
+		"is_direct": mxc.IsDirectRoom(evt.RoomID),
+		"content":   evt.Content.Raw})
 
 	if err != nil {
 		log.Error().Err(err).
@@ -73,6 +139,22 @@ func (mxc *MXClient) _onMessage(ctx context.Context, evt *event.Event) {
 			Msg("Received message")
 		fmt.Printf("Got message: %#v\n", evt)
 	*/
+}
+
+func (mxc *MXClient) LeaveRoomAndForget(ctx context.Context, room id.RoomID) error {
+	_, err := mxc.LeaveRoom(ctx, room)
+	if err != nil {
+		return err
+	}
+	if mxc.IsDirectRoom(room) {
+		delete(mxc._directMap, room)
+		mxc._storeDirectMap()
+	}
+	_, err = mxc.ForgetRoom(ctx, room)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 type sendmessage_data struct {
@@ -158,13 +240,16 @@ func NewMXClient(homeserverURL string, userID id.UserID, accessToken string) (*M
 
 	client.Store = cryptoStore
 
-	mxclient := &MXClient{client, nil, nil}
+	mxclient := &MXClient{client, nil, nil, make(map[id.RoomID][]id.UserID)}
 
 	syncer.ParseEventContent = true
 	syncer.OnEvent(client.StateStoreSyncHandler)
 
 	syncer.OnEventType(event.EventMessage, mxclient._onMessage)
-	syncer.OnEventType(event.StateMember, mxclient._onEvent)
+	syncer.OnEventType(event.StateMember, mxclient._onEventMember)
+	syncer.OnEventType(event.AccountDataDirectChats, mxclient._onAccountDataDM)
+
+	mxclient._loadDirectMap()
 
 	return mxclient, nil
 }

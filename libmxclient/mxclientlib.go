@@ -293,11 +293,7 @@ func apiv0_leaveroom(cid C.int, roomid *C.char) *C.char {
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
-	_, err = cli.LeaveRoom(context.Background(), id.RoomID(C.GoString(roomid)))
-	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
-	}
-	_, err = cli.ForgetRoom(context.Background(), id.RoomID(C.GoString(roomid)))
+	err = cli.LeaveRoomAndForget(context.Background(), id.RoomID(C.GoString(roomid)))
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
