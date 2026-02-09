@@ -8,7 +8,9 @@ ffibuilder.set_source(
     source=""" //passed to the real C compiler
         #include "libmxclient.h"
     """,
-    libraries=["mxclient"],
+    libraries=["mxclient", "olm"],
+    library_dirs=["."],
+    include_dirs=["."],
 )
 
 ffibuilder.cdef(
