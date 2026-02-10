@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 import sys
-from typing import Optional
 
 from .app import SMALApp
 
@@ -15,7 +14,7 @@ logger = logging.getLogger(__name__)
 class SMALBot(SMALApp):
     """ """
 
-    def __init__(self, sigil: String):
+    def __init__(self, sigil):
         super().__init__()
         self._sigil = sigil
 
