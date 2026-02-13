@@ -27,6 +27,7 @@ type MXClient struct {
 	*mautrix.Client
 	OnEvent    func(string)
 	OnMessage  func(string)
+	OnSystem   func(string)
 	_directMap map[id.RoomID][]id.UserID
 }
 
@@ -240,7 +241,7 @@ func NewMXClient(homeserverURL string, userID id.UserID, accessToken string) (*M
 
 	client.Store = cryptoStore
 
-	mxclient := &MXClient{client, nil, nil, make(map[id.RoomID][]id.UserID)}
+	mxclient := &MXClient{client, nil, nil, nil, make(map[id.RoomID][]id.UserID)}
 
 	syncer.ParseEventContent = true
 	syncer.OnEvent(client.StateStoreSyncHandler)

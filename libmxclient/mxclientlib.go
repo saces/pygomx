@@ -19,12 +19,17 @@ import (
 #include <stdlib.h>
 typedef void (*on_event_handler_ptr) (char*, void*);
 typedef void (*on_message_handler_ptr) (char*, void*);
+typedef void (*on_sys_handler_ptr) (char*, void*);
 
 static inline void call_c_on_event_handler(on_event_handler_ptr ptr, char* jsonStr, void* pobj) {
     (ptr)(jsonStr, pobj);
 }
 
 static inline void call_c_on_message_handler(on_message_handler_ptr ptr, char* jsonStr, void* pobj) {
+    (ptr)(jsonStr, pobj);
+}
+
+static inline void call_c_on_sys_handler(on_message_handler_ptr ptr, char* jsonStr, void* pobj) {
     (ptr)(jsonStr, pobj);
 }
 
@@ -42,6 +47,8 @@ type CBClient struct {
 	on_event_handler_pobj   unsafe.Pointer
 	on_message_handler      C.on_message_handler_ptr
 	on_message_handler_pobj unsafe.Pointer
+	on_sys_handler          C.on_sys_handler_ptr
+	on_sys_handler_pobj     unsafe.Pointer
 	syncCancelFunc          context.CancelCauseFunc
 }
 
@@ -57,6 +64,12 @@ func (cli *CBClient) OnMessage(s string) {
 	C.call_c_on_message_handler(cli.on_message_handler, cStr, cli.on_message_handler_pobj)
 }
 
+func (cli *CBClient) OnSystem(s string) {
+	cStr := C.CString(s)
+	defer C.free(unsafe.Pointer(cStr))
+	C.call_c_on_sys_handler(cli.on_sys_handler, cStr, cli.on_sys_handler_pobj)
+}
+
 func (cli *CBClient) Set_on_event_handler(fn C.on_event_handler_ptr, pobj unsafe.Pointer) {
 	cli.on_event_handler = fn
 	cli.on_event_handler_pobj = pobj
@@ -67,13 +80,18 @@ func (cli *CBClient) Set_on_message_handler(fn C.on_message_handler_ptr, pobj un
 	cli.on_message_handler_pobj = pobj
 }
 
+func (cli *CBClient) Set_on_sys_handler(fn C.on_sys_handler_ptr, pobj unsafe.Pointer) {
+	cli.on_sys_handler = fn
+	cli.on_sys_handler_pobj = pobj
+}
+
 // NewCClient creates a new Matrix Client ready for syncing
 func NewCBClient(homeserverURL string, userID id.UserID, accessToken string) (*CBClient, error) {
 	client, err := mxclient.NewMXClient(homeserverURL, userID, accessToken)
 	if err != nil {
 		return nil, err
 	}
-	return &CBClient{client, nil, nil, nil, nil, nil}, nil
+	return &CBClient{client, nil, nil, nil, nil, nil, nil, nil}, nil
 }
 
 /*
@@ -187,7 +205,7 @@ func apiv0_createclient(storage_path *C.char, url *C.char, userID *C.char, acces
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
-	client := &CBClient{mxclient, nil, nil, nil, nil, nil}
+	client := &CBClient{mxclient, nil, nil, nil, nil, nil, nil, nil}
 	cclients = append(cclients, client)
 	return C.CString(fmt.Sprintf("{ \"id:\"SUCESS. ID=%d\n", len(cclients)))
 }
@@ -198,9 +216,10 @@ func apiv0_createclient_pass(mxpassfile_path *C.char, storage_path *C.char, url 
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
-	client := &CBClient{mxclient, nil, nil, nil, nil, nil}
+	client := &CBClient{mxclient, nil, nil, nil, nil, nil, nil, nil}
 	mxclient.OnEvent = client.OnEvent
 	mxclient.OnMessage = client.OnMessage
+	mxclient.OnSystem = client.OnSystem
 	cclients = append(cclients, client)
 	out, err := json.Marshal(map[string]any{"id": len(cclients) - 1, "userid": client.UserID.String(), "deviceid": client.DeviceID.String()})
 	if err != nil {
@@ -229,6 +248,17 @@ func apiv0_set_on_message_handler(cid C.int, fn C.on_message_handler_ptr, pobj u
 	}
 
 	cli.Set_on_message_handler(fn, pobj)
+	return C.CString("SUCCESS.")
+}
+
+//export apiv0_set_on_sys_handler
+func apiv0_set_on_sys_handler(cid C.int, fn C.on_sys_handler_ptr, pobj unsafe.Pointer) *C.char {
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+
+	cli.Set_on_sys_handler(fn, pobj)
 	return C.CString("SUCCESS.")
 }
 

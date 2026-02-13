@@ -50,6 +50,14 @@ class _MXClient:
         if result.startswith(b"ERR:"):
             raise APIError(result)
 
+        r = lib.apiv0_set_on_sys_handler(
+            self.client_id, on_sys_callback, self._ffi_selfhandle
+        )
+        result = ffi.string(r)
+        lib.FreeCString(r)
+        if result.startswith(b"ERR:"):
+            raise APIError(result)
+
     def _createMXClient(self):
         r = lib.apiv0_createclient_pass(b".mxpass", b".", b"*", b"*", b"*")
 
@@ -97,6 +105,12 @@ class _MXClient:
         else:
             logger.warn(f"got message but on_message not declared: {msg}")
 
+    def process_sys(self, ntf):
+        if hasattr(self, "on_sys") and callable(self.on_sys):
+            self.on_sys(ntf)
+        else:
+            logger.warn(f"got systen notification but on_sys not declared: {ntf}")
+
 
 @ffi.callback("void(char*, void*)")
 def on_event_callback(evt, pobj):
@@ -112,3 +126,11 @@ def on_message_callback(msg, pobj):
     m = ffi.string(msg).decode("utf-8")
     msg = json.loads(m)
     cli.process_message(msg)
+
+
+@ffi.callback("void(char*, void*)")
+def on_sys_callback(msg, pobj):
+    cli = ffi.from_handle(pobj)
+    m = ffi.string(msg).decode("utf-8")
+    sys = json.loads(m)
+    cli.process_sys(sys)

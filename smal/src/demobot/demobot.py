@@ -16,6 +16,9 @@ DEFAULT_PREFIX = "!"
 
 class DemoBot(SMALBot):
 
+    def on_sys(self, ntf):
+        print("Got a system notification: ", ntf)
+
     def on_event(self, evt):
         print("Got an event: ", e)
 
