@@ -15,6 +15,8 @@ go mod download
 EOF
 
 RUN --mount=type=bind,source=./libmxclient,target=/libmxclient/build <<EOF
+# building go lib
+set -e
 cd /libmxclient/build
 CGO_ENABLED=1 GOARCH=${GOARCH} go build -buildmode=c-shared -o /pygomx-build/libmxclient.so .
 EOF
@@ -22,9 +24,6 @@ EOF
 FROM docker.io/library/python:${PYTHON_VERSION}-${DEBIAN_VERSION} AS pybuilder
 ENV PYTHONUNBUFFERED=1
 ENV PIP_ROOT_USER_ACTION=ignore
-
-RUN apt update
-RUN apt -y install libolm-dev
 
 COPY --from=gobuilder /pygomx-build/libmxclient.so /usr/local/lib/libmxclient.so
 COPY --from=gobuilder /pygomx-build/libmxclient.h /usr/local/include/libmxclient.h
@@ -34,6 +33,8 @@ RUN pip install cffi setuptools
 COPY pygomx-module /pygomx
 
 RUN <<EOF
+# build py module
+set -e
 cd /pygomx
 python3 build_ffi.py
 ls -la *.so
@@ -45,6 +46,8 @@ ENV PIP_ROOT_USER_ACTION=ignore
 RUN pip install cffi
 
 RUN <<EOF
+# install packages
+set -e
 apt update
 apt -y upgrade
 apt -y install libolm3
