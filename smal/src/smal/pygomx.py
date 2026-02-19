@@ -93,6 +93,11 @@ class _MXClient:
         r = lib.apiv0_joinedrooms(self.client_id)
         return checkApiError(r)
 
+    def _createroom(self, data_dict):
+        data = json.dumps(data_dict).encode(encoding="utf-8")
+        r = lib.apiv0_createroom(self.client_id, data)
+        return checkApiError(r)
+
     def process_event(self, evt):
         if hasattr(self, "on_event") and callable(self.on_event):
             self.on_event(evt)

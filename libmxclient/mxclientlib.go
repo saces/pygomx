@@ -12,6 +12,7 @@ import (
 	"mxclientlib/mxutils"
 	"unsafe"
 
+	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/id"
 )
 
@@ -352,6 +353,32 @@ func apiv0_joinedrooms(cid C.int) *C.char {
 		roomList = append(roomList, roomListItem{RoomId: room, IsDirect: cli.IsDirectRoom(room)})
 	}
 	out, err := json.Marshal(roomList)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+	s := string(out)
+	return C.CString(s)
+}
+
+//export apiv0_createroom
+func apiv0_createroom(cid C.int, data *C.char) *C.char {
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+
+	var req mautrix.ReqCreateRoom
+	err = json.Unmarshal([]byte(C.GoString(data)), &req)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+
+	resp, err := cli.CreateRoom(context.Background(), &req)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+
+	out, err := json.Marshal(resp)
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
