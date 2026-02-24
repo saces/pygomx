@@ -4,7 +4,7 @@
 BUILD_MODE ?= static
 
 # one of none, colm, goolm, vodozemac
-OLM_FLAVOUR ?= colm
+OLM_FLAVOR ?= colm
 
 ifndef GO_TAGS
   GO_TAGS =
@@ -12,16 +12,16 @@ else
   GO_TAGS := $(GO_TAGS),
 endif
 
-ifeq ($(OLM_FLAVOUR),none)
+ifeq ($(OLM_FLAVOR),none)
     GO_TAGS := $(GO_TAGS)nocrypto
-else ifeq ($(OLM_FLAVOUR),colm)
+else ifeq ($(OLM_FLAVOR),colm)
     GO_TAGS := $(GO_TAGS)colm
-else ifeq ($(OLM_FLAVOUR),goolm)
+else ifeq ($(OLM_FLAVOR),goolm)
     GO_TAGS := $(GO_TAGS)goolm
-else ifeq ($(OLM_FLAVOUR),vodozemac)
+else ifeq ($(OLM_FLAVOR),vodozemac)
     GO_TAGS := $(GO_TAGS)vodozemac
 else
-  $(error unknown OLM_FLAVOUR $(OLM_FLAVOUR))
+  $(error unknown OLM_FLAVOR $(OLM_FLAVOR))
 endif
 
 
@@ -40,7 +40,7 @@ endif
 link_list =
 
 ifeq ($(BUILD_MODE),static)
-  ifeq ($(OLM_FLAVOUR),colm)
+  ifeq ($(OLM_FLAVOR),colm)
     link_list += olm
   endif
 endif
