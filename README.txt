@@ -16,15 +16,14 @@ the bot follows each invite (autojoin) and have two commands:
   !echo [text]  - in a DM the bot responds with 'text',
                   in regular rooms it is a reply.
 
-install (venv):
+install from source (venv):
+
+    you need go >=1.22 and libolm-dev installed
 
     (create and activate a venv)
 
     cd pygomx-module
-    pip install -r requirements.txt
-    make install
-
-    (run 'make clean' to remove any generated)
+    pip install .
 
     cd ../smal
     pip install [-e] .

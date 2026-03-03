@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import os
 import sys
 from cffi import FFI
 
@@ -6,8 +7,8 @@ lib_list = [
     "mxclient",
 ]
 
-if len(sys.argv) > 1:
-    lib_list += sys.argv[1:]
+if os.getenv("PYGOMX_LINK_OLM"):
+    lib_list += ["olm"]
 
 print(f"liblist: {lib_list}")
 

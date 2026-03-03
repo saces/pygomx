@@ -1,1 +1,1 @@
-include *.so
+exclude build_ffi.py

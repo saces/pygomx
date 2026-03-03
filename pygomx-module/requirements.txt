@@ -1,3 +1,0 @@
-cffi
-setuptools>=80
-wheel
