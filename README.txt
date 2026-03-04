@@ -18,15 +18,25 @@ the bot follows each invite (autojoin) and have two commands:
 
 install from source (venv):
 
-    you need go >=1.22 and libolm-dev installed
+  build configuration is done via env vars
 
-    (create and activate a venv)
+  # one of static, shared
+  PYGOMX_BUILD_MODE=static
 
-    cd pygomx-module
-    pip install .
+  # one of none, colm, goolm, vodozemac
+  PYGOMX_OLM_FLAVOR=colm
+  # for colm you need libolm-dev installed
+  # vodozemac is not supported yet
 
-    cd ../smal
-    pip install [-e] .
+  you need go >=1.22 installed
+
+  (create and activate a venv)
+
+  cd pygomx-module
+  pip install .
+
+  cd ../smal
+  pip install [-e] .
 
 usage:
 

@@ -7,7 +7,11 @@ lib_list = [
     "mxclient",
 ]
 
-if os.getenv("PYGOMX_LINK_OLM"):
+# keep defaults in sync with setup.py
+if (
+    os.getenv("PYGOMX_BUILD_MODE", "static") == "static"
+    and os.getenv("PYGOMX_OLM_FLAVOR", colm) == "colm"
+):
     lib_list += ["olm"]
 
 print(f"liblist: {lib_list}")
