@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pygomx-module"
 version = "0.0.1"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 description = "python pindings for a golang matrix library"
 license = "AGPL-3.0-only"
 readme = "README.txt"
