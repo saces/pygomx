@@ -16,7 +16,15 @@ the bot follows each invite (autojoin) and have two commands:
   !echo [text]  - in a DM the bot responds with 'text',
                   in regular rooms it is a reply.
 
-install from source (venv):
+
+binary/package install:
+
+  (only linux-amd64 for now)
+  pip install --index-url https://codeberg.org/api/packages/saces/pypi/simple/ --no-deps pygomx-module
+  pip install git+https://codeberg.org/saces/pygomx.git#subdirectory=smal
+
+
+install from source / develop (venv):
 
   build configuration is done via env vars
 
