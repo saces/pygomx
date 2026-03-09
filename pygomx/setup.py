@@ -51,7 +51,7 @@ class CustomCommand(Command):
             "-tags",
             ",".join(go_tags),
             "-o",
-            f"../pygomx-module/libmxclient{build_mode_ext}",
+            f"../pygomx/libmxclient{build_mode_ext}",
             ".",
         ]
         subprocess.call(go_call, cwd="../libmxclient")

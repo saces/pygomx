@@ -1,5 +1,5 @@
-pygomx-module
-=============
+pygomx
+======
 
 python package with the pygomx binaries
 
