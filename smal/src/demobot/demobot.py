@@ -20,7 +20,7 @@ class DemoBot(SMALBot):
         print("Got a system notification: ", ntf)
 
     def on_event(self, evt):
-        print("Got an event: ", e)
+        print("Got an event: ", evt)
 
     def on_message(self, msg):
 
@@ -40,7 +40,7 @@ class DemoBot(SMALBot):
             return
 
         if msg["content"]["body"] == "!stop":
-            logger.info(f"stopping the bot")
+            logger.info("stopping the bot")
             self.stop()
             return
 
