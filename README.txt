@@ -21,6 +21,8 @@ binary/package install:
 
   (only linux-amd64 for now)
   pip install --index-url https://codeberg.org/api/packages/saces/pypi/simple/ --no-deps pygomx
+  pip install git+https://codeberg.org/saces/pygomx.git#subdirectory=pygomx-deps
+
   pip install git+https://codeberg.org/saces/pygomx.git#subdirectory=smal
 
 
