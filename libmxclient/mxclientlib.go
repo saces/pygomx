@@ -124,7 +124,10 @@ cli tools
 //export cli_discoverhs
 func cli_discoverhs(id *C.char) *C.char {
 	mxid := C.GoString(id)
-	result := mxutils.DiscoverHS(mxid)
+	result, err := mxutils.DiscoverHS(mxid)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
 	return C.CString(result)
 }
 

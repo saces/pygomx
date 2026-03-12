@@ -7,8 +7,11 @@ import json
 
 
 @click.command()
+@click.option(
+    "--json", "show_json", is_flag=True, help="show json as returned from server."
+)
 @click.argument("domain", metavar="string")
-def discoverhs(domain):
+def discoverhs(domain, show_json):
     """Attempts to discover the homeserver from the given string"""
     mxid = domain.encode(encoding="utf-8")
 
@@ -18,5 +21,8 @@ def discoverhs(domain):
     if result.startswith("ERR:"):
         print(result)
         sys.exit(1)
-    result_dict = json.loads(result)
-    print(result_dict["m.homeserver"]["base_url"])
+    if show_json:
+        print(result)
+    else:
+        result_dict = json.loads(result)
+        print(result_dict["m.homeserver"]["base_url"])

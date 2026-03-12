@@ -12,7 +12,8 @@ import (
 	"maunium.net/go/mautrix/id"
 )
 
-func DiscoverHS(ids string) string {
+// DiscoverHS try to discover the homeserver url from the given string.
+func DiscoverHS(ids string) (string, error) {
 
 	var domainname string
 
@@ -30,17 +31,17 @@ func DiscoverHS(ids string) string {
 
 	wk, err := mautrix.DiscoverClientAPI(context.Background(), domainname)
 	if err != nil {
-		return fmt.Sprintf("ERR: %v", err)
+		return "", err
 	}
 	if wk == nil {
-		return fmt.Sprintf("No well-known. hs from input: %s", domainname)
+		return domainname, nil
 	}
 
 	j, err := json.Marshal(wk)
 	if err != nil {
-		return fmt.Sprintf("ERR: %v", err)
+		return "", err
 	}
-	return string(j)
+	return string(j), nil
 }
 
 func MkToken(ids string, pw string) string {
