@@ -192,6 +192,18 @@ func cliv0_mxpassitem(mxpassfile_path *C.char, url *C.char, localpart *C.char, d
 	return C.CString(s)
 }
 
+//export cliv0_genericrequest
+func cliv0_genericrequest(hs *C.char, tk *C.char, reqData *C.char) *C.char {
+	_hs := C.GoString(hs)
+	_tk := C.GoString(tk)
+	_reqData := C.GoString(reqData)
+	resp, err := mxutils.GenericRequest(_hs, _tk, _reqData)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v\n%s", err, resp))
+	}
+	return C.CString(resp)
+}
+
 /*
 high level api, supports multiple clients
 the same handler can be attached to multiple clients
