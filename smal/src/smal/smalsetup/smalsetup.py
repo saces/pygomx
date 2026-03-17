@@ -1,49 +1,60 @@
 # Copyright (C) 2026 saces@c-base.org
 # SPDX-License-Identifier: AGPL-3.0-only
-import sys
-import os
+import datetime
 import getpass
-import json
-from _pygomx import lib, ffi
+import os
+import time
+from functools import partial, wraps
+
+import click
+from pygomx.errors import PygomxAPIError
+
+from pygomx import ApiV0
 
 
-def smalsetup():
-    if len(sys.argv) != 2:
-        print("usage: ", sys.argv[0], " matrixid")
-        return 1
+def catch_exception(func=None, *, handle):
+    if not func:
+        return partial(catch_exception, handle=handle)
 
-    mxid = sys.argv[1].encode(encoding="utf-8")
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except handle as e:
+            raise click.ClickException(e)
 
-    r = lib.apiv0_discover(mxid)
-    result = ffi.string(r).decode("utf-8")
-    lib.FreeCString(r)
+    return wrapper
 
-    if result.startswith("ERR:"):
-        print(result)
-        return 1
 
-    result_dict = json.loads(result)
+@click.command()
+@click.option(
+    "--mxpass",
+    "mxpassfile",
+    metavar="filepath",
+    default=".mxpass",
+    help="mxpass file name",
+)
+@click.argument("mxid", metavar="MatrixID")
+@catch_exception(handle=(PygomxAPIError))
+def smalsetup(mxid, mxpassfile):
+    """Utility for creating smalbot mxpass files"""
+
+    create_mxpass = len(mxpassfile.strip()) > 0
+
+    if create_mxpass:
+        if os.path.exists(mxpassfile):
+            raise click.ClickException(f"file {mxpassfile} exists.")
+
+    result_dict = ApiV0.Discover(mxid)
+
     result_dict["password"] = getpass.getpass(prompt="Password: ")
-    data = json.dumps(result_dict).encode(encoding="utf-8")
+    result_dict["make_master_key"] = True
+    result_dict["make_recovery_key"] = True
 
-    r = lib.apiv0_login(data)
-    result = ffi.string(r).decode("utf-8")
-    lib.FreeCString(r)
+    now = int(time.time())
+    result_dict["deviceid"] = f"smalbot-{now}"
+    result_dict["devicename"] = f"smalbot-{datetime.fromtimestamp(now)}"
 
-    if result.startswith("ERR:"):
-        print(result)
-        return 1
+    ApiV0.Login(result_dict, ".mxpass")
 
-    # Set restrictive umask (owner only)
-    new_umask = 0o077
-    old_umask = os.umask(new_umask)
-
-    # Create file with new umask
-    with open(".mxpass", "w") as f:
-        f.write(result)
-
-    # Restore original umask
-    os.umask(old_umask)
-
-    print("login created. start your bot now.")
-    return 0
+    click.echo("login created. start your bot now.")

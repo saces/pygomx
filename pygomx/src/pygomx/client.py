@@ -1,13 +1,14 @@
 # Copyright (C) 2026 saces@c-base.org
 # SPDX-License-Identifier: AGPL-3.0-only
+import asyncio
 import json
 import logging
+import threading
 
 from _pygomx import ffi, lib
 
-from .errors import APIError, CheckApiError, CheckApiResult
-import asyncio
-import threading
+from .apiv0 import ApiV0Api
+from .errors import CheckApiError, CheckApiResult, PygomxAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class _AsyncClient:
         result = ffi.string(r)
         lib.FreeCString(r)
         if result.startswith(b"ERR:"):
-            raise APIError(result)
+            raise PygomxAPIError(result)
 
         r = lib.apiv0_set_on_message_handler(
             self.client_id, on_message_callback, self._ffi_selfhandle
@@ -37,7 +38,7 @@ class _AsyncClient:
         result = ffi.string(r)
         lib.FreeCString(r)
         if result.startswith(b"ERR:"):
-            raise APIError(result)
+            raise PygomxAPIError(result)
 
         r = lib.apiv0_set_on_sys_handler(
             self.client_id, on_sys_callback, self._ffi_selfhandle
@@ -45,7 +46,7 @@ class _AsyncClient:
         result = ffi.string(r)
         lib.FreeCString(r)
         if result.startswith(b"ERR:"):
-            raise APIError(result)
+            raise PygomxAPIError(result)
 
     def _createMXClient(self):
         r = lib.apiv0_createclient_pass(b".mxpass", b".", b"*", b"*", b"*")
@@ -53,7 +54,7 @@ class _AsyncClient:
         result = ffi.string(r)
         lib.FreeCString(r)
         if result.startswith(b"ERR:"):
-            raise APIError(result)
+            raise PygomxAPIError(result)
 
         result_dict = json.loads(result)
         self.client_id = result_dict["id"]
@@ -61,29 +62,27 @@ class _AsyncClient:
         self.DeviceID = result_dict["deviceid"]
 
     async def _sync(self):
-        r = lib.apiv0_startclient(self.client_id)
+        r = ApiV0Api.startclient(self.client_id)
         CheckApiError(r)
 
     def _stopsync(self):
-        r = lib.apiv0_stopclient(self.client_id)
+        r = ApiV0Api.stopclient(self.client_id)
         CheckApiError(r)
 
     async def _sendmessage(self, data_dict):
-        data = json.dumps(data_dict).encode(encoding="utf-8")
-        r = lib.apiv0_sendmessage(self.client_id, data)
+        r = ApiV0Api.sendmessage(self.client_id, data_dict)
         return CheckApiResult(r)
 
     def leaveroom(self, roomid):
-        r = lib.apiv0_leaveroom(self.client_id, roomid.encode(encoding="utf-8"))
+        r = ApiV0Api.leaveroom(self.client_id, roomid)
         CheckApiError(r)
 
     async def joinedrooms(self):
-        r = lib.apiv0_joinedrooms(self.client_id)
+        r = ApiV0Api.joinedrooms(self.client_id)
         return CheckApiResult(r)
 
     def _createroom(self, data_dict):
-        data = json.dumps(data_dict).encode(encoding="utf-8")
-        r = lib.apiv0_createroom(self.client_id, data)
+        r = ApiV0Api.createroom(self.client_id, data_dict)
         return CheckApiError(r)
 
     def process_event(self, evt):

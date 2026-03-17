@@ -1,8 +1,13 @@
 # Copyright (C) 2026 saces@c-base.org
 # SPDX-License-Identifier: AGPL-3.0-only
-from _pygomx import lib, ffi
-import click
 import json
+
+import click
+from pygomx.errors import PygomxAPIError
+
+from pygomx import CliV0
+
+from .click import click_catch_exception
 
 
 @click.command()
@@ -15,6 +20,7 @@ import json
 )
 @click.option("-d", "--domain", "domain", metavar="domain", help="domain selector")
 @click.argument("mxpassfile", metavar="mxpassfilepath", required=False)
+@click_catch_exception(handle=(PygomxAPIError))
 def passitem(mxpassfile, show_secret, hs_url, localpart, domain):
     """utility to get items from mxpasss files"""
 
@@ -28,19 +34,10 @@ def passitem(mxpassfile, show_secret, hs_url, localpart, domain):
     if domain is None:
         domain = "*"
 
-    r = lib.cliv0_mxpassitem(
-        mxpassfile.encode(encoding="utf-8"),
-        hs_url.encode(encoding="utf-8"),
-        localpart.encode(encoding="utf-8"),
-        domain.encode(encoding="utf-8"),
-    )
-    result = ffi.string(r).decode("utf-8")
-    lib.FreeCString(r)
-
-    result_dict = json.loads(result)
+    result_dict = CliV0.MXPassItem(mxpassfile, hs_url, localpart, domain)
 
     if show_secret:
-        print(result_dict["Token"])
+        click.echo(result_dict["Token"])
     else:
         result_dict["Token"] = "***"
-        print(json.dumps(result_dict))
+        click.echo(json.dumps(result_dict))

@@ -1,0 +1,1 @@
+from .demobot import main

@@ -1,10 +1,9 @@
 # Copyright (C) 2026 saces@c-base.org
 # SPDX-License-Identifier: AGPL-3.0-only
-from _pygomx import ffi, lib
 import json
 
 
-class APIError(Exception):
+class PygomxAPIError(Exception):
     """Exception raised for api usage errors.
 
     Attributes:
@@ -16,27 +15,27 @@ class APIError(Exception):
         super().__init__(self.message)
 
 
-def apiResult(cstr):
-    result = ffi.string(cstr).decode("utf-8")
-    lib.FreeCString(cstr)
-    return result
+def CheckApiErrorOnly(rstr):
+    if rstr.startswith("ERR:"):
+        raise PygomxAPIError(rstr)
 
 
-def CheckApiError(cstr):
-    result = apiResult(cstr)
+def CheckApiError(rstr):
+    if rstr.startswith("ERR:"):
+        raise PygomxAPIError(rstr)
 
-    if result.startswith("ERR:"):
-        raise APIError(result)
-
-
-def CheckApiResult(cstr):
-    result = apiResult(cstr)
-
-    if result.startswith("ERR:"):
-        raise APIError(result)
-
-    if result == "SUCCESS.":
+    if rstr == "SUCCESS.":
         return None
 
-    result_dict = json.loads(result)
+    raise ValueError(f"unexpected result: {rstr[:60]}")
+
+
+def CheckApiResult(rstr):
+    if rstr.startswith("ERR:"):
+        raise PygomxAPIError(rstr)
+
+    if rstr == "SUCCESS.":
+        return None
+
+    result_dict = json.loads(rstr)
     return result_dict

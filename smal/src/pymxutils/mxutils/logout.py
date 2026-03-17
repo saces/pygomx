@@ -4,8 +4,11 @@ import getpass
 from datetime import datetime
 
 import click
+from pygomx.errors import PygomxAPIError
 
 from pygomx import CliV0
+
+from .click import click_catch_exception
 
 
 @click.command()
@@ -22,17 +25,18 @@ from pygomx import CliV0
     type=click.Choice(["all", "other", "self"]),
     help="logout devices",
 )
+@click_catch_exception(handle=(PygomxAPIError))
 def logout(hs_url, token, devices, logout_type, show_json):
     """List or logout devices.
 
     \b
     mxlogout [--json]
         list all devices
-    mxlogout --all
+    mxlogout --logout all
         logout all devices
-    mxlogout --self
+    mxlogout --logout self
         logout this device
-    mxlogout --other
+    mxlogout --logout other
         logout all other devices (requires auth)
     mxlogout deviceid [deviceid]...
         logout given devices (requires auth)
@@ -79,7 +83,7 @@ def logout(hs_url, token, devices, logout_type, show_json):
         return
 
     if show_json:
-        print(raw_device_dict)
+        click.echo(raw_device_dict)
         return
 
     max_len = 0
@@ -88,12 +92,16 @@ def logout(hs_url, token, devices, logout_type, show_json):
 
     for device in raw_device_dict["devices"]:
         date_object = datetime.fromtimestamp(device["last_seen_ts"] / 1000)
-        print(
-            device["device_id"],
-            " " * (max_len - len(device["device_id"])),
-            date_object,
-            device["last_seen_ip"],
-            device["display_name"],
+        click.echo(
+            " ".join(
+                [
+                    device["device_id"],
+                    " " * (max_len - len(device["device_id"])),
+                    str(date_object),
+                    device["last_seen_ip"],
+                    device["display_name"],
+                ]
+            )
         )
         date_object = datetime.fromtimestamp(device["last_seen_ts"] / 1000)
 
@@ -106,7 +114,7 @@ def do_logout(cli, all):
     if all:
         reqData["path"] += ["all"]
     res = cli.Generic(reqData)
-    print(res)
+    click.echo(res)
 
 
 def do_logout_devices(cli, devices, user_id):
@@ -126,4 +134,4 @@ def do_logout_devices(cli, devices, user_id):
         },
     }
     res = cli.Generic(reqData)
-    print(res)
+    click.echo(res)
