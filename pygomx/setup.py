@@ -50,7 +50,7 @@ class CustomCommand(Command):
             case _:
                 raise ValueError("Invalid PYGOMX_BUILD_MODE.")
 
-        match os.getenv("PYGOMX_OLM_FLAVOR", "colm"):
+        match os.getenv("PYGOMX_OLM_FLAVOR", "goolm"):
             case "none":
                 go_tags += ["nocrypto"]
             case "colm":
