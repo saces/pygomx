@@ -81,6 +81,8 @@ class CustomBuild(build):
 
 
 setup(
+    use_calver="%Y.%m.%d.%H.%M",
+    setup_requires=["calver"],
     cffi_modules=["build_ffi.py:ffibuilder"],
     cmdclass={
         "build": CustomBuild,

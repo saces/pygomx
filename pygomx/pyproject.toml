@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=80", "cffi>=2.0.0"]
+requires = ["setuptools>=80", "cffi>=2.0.0", "calver"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pygomx"
-version = "0.0.2"
+dynamic = ["version"]
 requires-python = ">=3.10"
 description = "python pindings for a golang matrix library"
 license = "AGPL-3.0-only"
