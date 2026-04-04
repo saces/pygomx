@@ -1,0 +1,221 @@
+name: Build, test and release
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+
+permissions:
+  contents: read
+
+
+jobs:
+  timestamp:
+    runs-on: ubuntu-latest
+    outputs:
+      sepoch: ${{ steps.timestamps.outputs.SEPOCH }}
+    steps:
+      - name: Set Timestamp
+        id: timestamps
+        run: echo "SEPOCH=$(date +%s)" >> $GITHUB_OUTPUT
+
+
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      pygomx: ${{ steps.filter.outputs.pygomx }}
+      smal: ${{ steps.filter.outputs.smal }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            pygomx:
+              - 'libmxclient/**'
+              - 'pygomx/**'
+            smal:
+              - 'smal/**'
+
+
+  pygomx-wheel:
+    needs:
+      - changes
+      - timestamp
+    if: ${{ needs.changes.outputs.pygomx == 'true' }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-11-arm, macos-15-intel, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+
+      - name: build wheel
+        uses: pypa/cibuildwheel@v3.4.1
+        with:
+          package-dir: pygomx
+        env:
+          SOURCE_DATE_EPOCH: ${{ needs.timestamp.outputs.sepoch }}
+          CIBW_SKIP: "*-win32"
+
+      - name: upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: pygomx-${{ github.sha }}-${{ matrix.os }}-wheel.zip
+          path: ./wheelhouse/*.whl
+
+
+
+  pygomx-wheel-linux:
+    needs:
+      - changes
+      - timestamp
+    if: ${{ needs.changes.outputs.pygomx == 'true' }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      #- name: Set up QEMU
+      #  if: runner.os == 'Linux' && runner.arch == 'X64'
+      #  uses: docker/setup-qemu-action@v3
+      #  with:
+      #    platforms: all
+
+      - name: build wheel
+        uses: pypa/cibuildwheel@v3.4.1
+        with:
+          package-dir: pygomx
+        env:
+          CIBW_BEFORE_ALL: >-
+            dnf -y install golang
+          CIBW_SKIP: "*-musllinux_*"
+          SOURCE_DATE_EPOCH: ${{ needs.timestamp.outputs.sepoch }}
+
+      - name: upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: pygomx-${{ github.sha }}-${{ matrix.os }}-wheel.zip
+          path: ./wheelhouse/*.whl
+
+
+  pygomx-pypi:
+    needs:
+      - changes
+      - pygomx-wheel
+      - pygomx-wheel-linux
+    if: ${{ needs.changes.outputs.pygomx == 'true' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: ${{ github.ref == 'refs/heads/main' && 'https://pypi.org/p/pygomx' || 'https://test.pypi.org/p/pygomx' }}
+
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: pygomx-*
+          path: dist
+          merge-multiple: true
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
+          repository-url: ${{ github.ref == 'refs/heads/main' && 'https://pypi.org/' || 'https://test.pypi.org/legacy/' }}
+
+
+  smal-sdist:
+    needs:
+      - changes
+      - timestamp
+    if: ${{ needs.changes.outputs.smal == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+      - name: build sdist
+        env:
+          SOURCE_DATE_EPOCH: ${{ needs.timestamp.outputs.sepoch }}
+        run: |
+          cd smal/
+          pip install build
+          python -m build --sdist
+          pip install ./dist/*.tar.gz
+
+      - name: upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: smal-${{ github.sha }}-sdist.zip
+          path: ./smal/dist/*.tar.gz
+
+
+  smal-wheel:
+    needs:
+      - changes
+      - timestamp
+    if: ${{ needs.changes.outputs.smal == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+      - name: build wheel
+        env:
+          SOURCE_DATE_EPOCH: ${{ needs.timestamp.outputs.sepoch }}
+        run: |
+          cd smal/
+          pip install build
+          python -m build --wheel
+          pip install ./dist/*.whl
+
+      - name: upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: smal-${{ github.sha }}-wheel.zip
+          path: ./smal/dist/*.whl
+
+
+  smal-pypi:
+    needs:
+      - changes
+      - smal-sdist
+      - smal-wheel
+    if: ${{ needs.changes.outputs.smal == 'true' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      #url: https://test.pypi.org/p/smal
+      url: ${{ github.ref == 'refs/heads/main' && 'https://pypi.org/p/smal' || 'https://test.pypi.org/p/smal' }}
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: smal-*
+          path: dist
+          merge-multiple: true
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: ${{ github.ref == 'refs/heads/main' && 'https://pypi.org/' || 'https://test.pypi.org/legacy/' }}
