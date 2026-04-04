@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools", "calver"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "smal"
-version = "0.0.1"
+name = "mxsmal"
+dynamic = ["version"]
 requires-python = ">=3.10"
 description = "smal - simple matrix application library"
 authors = [{ name = "saces" }]
@@ -19,12 +19,12 @@ dependencies = [
     "asyncio",
     "cffi>=2.0.0",
     "click",
-    "pygomx>=0.0.2"
+    "pygomx>=2026.4.4.9.9",
 ]
 
 [tool.setuptools.package-dir]
 "pymxutils" = "src/pymxutils"
-"smal" = "src/smal"
+"mxsmal" = "src/smal"
 "smbl" = "src/smbl"
 "demobot" = "src/demobot"
 

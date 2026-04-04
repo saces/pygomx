@@ -205,7 +205,7 @@ jobs:
     environment:
       name: pypi
       #url: https://test.pypi.org/p/smal
-      url: ${{ github.ref == 'refs/heads/main' && 'https://pypi.org/p/smal' || 'https://test.pypi.org/p/smal' }}
+      url: ${{ github.ref == 'refs/heads/main' && 'https://pypi.org/p/mxsmal' || 'https://test.pypi.org/p/mxsmal' }}
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
