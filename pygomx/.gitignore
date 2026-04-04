@@ -7,3 +7,4 @@ build/
 *.o
 *.a
 __pycache__
+.eggs/
