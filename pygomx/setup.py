@@ -73,7 +73,9 @@ class CustomCommand(Command):
             f"../pygomx/libmxclient{build_mode_ext}",
             ".",
         ]
-        subprocess.call(go_call, cwd="../libmxclient")
+        ret = subprocess.call(go_call, cwd="../libmxclient")
+        if ret != 0:
+            raise Exception("Go build failed.")
 
 
 class CustomBuild(build):
