@@ -78,7 +78,7 @@ jobs:
     needs:
       - changes
       - timestamp
-    if: ${{ needs.changes.outputs.pygomx == 'true' }}
+    if: ${{ needs.changes.outputs.pygomx == 'needsbuildfix' }}
     runs-on: ${{ matrix.os }}
     continue-on-error: true
     strategy:
@@ -152,8 +152,8 @@ jobs:
     needs:
       - changes
       - pygomx-wheel-mac
-      - pygomx-wheel-win
       - pygomx-wheel-linux
+      #- pygomx-wheel-win
     if: ${{ needs.changes.outputs.pygomx == 'true' }}
     runs-on: ubuntu-latest
     environment:
