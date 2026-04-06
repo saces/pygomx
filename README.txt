@@ -25,6 +25,14 @@ binary/package install:
 
 install from source / develop (venv):
 
+  build requirements:
+    golang 1.25+
+      git 2.24+
+    gcc 4.6+
+      windows: gcc built with binutils 2.37+
+    python 3.10+
+
+
   build configuration is done via env vars
 
   # one of static, shared
@@ -34,8 +42,6 @@ install from source / develop (venv):
   PYGOMX_OLM_FLAVOR=goolm
   # for colm you need libolm-dev installed
   # vodozemac is not supported yet
-
-  you need go >=1.25 installed
 
   (create and activate a venv)
 
