@@ -36,7 +36,7 @@ jobs:
               - 'libmxclient/**'
               - 'pygomx/**'
             smal:
-              - 'smal/**'
+              - 'mxsmal/**'
 
 
   pygomx-wheel-mac:
