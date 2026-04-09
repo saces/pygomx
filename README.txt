@@ -32,6 +32,7 @@ install from source / develop (venv):
       windows: gcc built with binutils 2.37+
     python 3.10+
 
+  (obtain this repository and cd into it)
 
   build configuration is done via env vars
 
