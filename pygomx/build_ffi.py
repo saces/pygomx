@@ -4,9 +4,14 @@ import os
 
 from cffi import FFI
 
-lib_list = [
-    "mxclient",
-]
+if os.name == "nt":
+    lib_list = [
+        "libmxclient",
+    ]
+else:
+    lib_list = [
+        "mxclient",
+    ]
 
 # keep defaults in sync with setup.py
 if (

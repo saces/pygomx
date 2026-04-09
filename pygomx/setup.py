@@ -43,10 +43,16 @@ class CustomCommand(Command):
         match os.getenv("PYGOMX_BUILD_MODE", "static"):
             case "static":
                 build_mode_name = "c-archive"
-                build_mode_ext = ".a"
+                if os.name == "nt":
+                    build_mode_ext = ".lib"
+                else:
+                    build_mode_ext = ".a"
             case "shared":
                 build_mode_name = "c-shared"
-                build_mode_ext = ".so"
+                if os.name == "nt":
+                    build_mode_ext = ".dll"
+                else:
+                    build_mode_ext = ".so"
             case _:
                 raise ValueError("Invalid PYGOMX_BUILD_MODE.")
 
@@ -73,9 +79,22 @@ class CustomCommand(Command):
             f"../pygomx/libmxclient{build_mode_ext}",
             ".",
         ]
-        ret = subprocess.call(go_call, cwd="../libmxclient")
-        if ret != 0:
-            raise Exception("Go build failed.")
+        # print(f"DEBUG: {' '.join(go_call) }")
+        subprocess.check_call(go_call, cwd="../libmxclient")
+
+        if os.name == "nt" and os.getenv("PYGOMX_BUILD_MODE", "nope") == "shared":
+            from setuptools._distutils.compilers.C.msvc import Compiler
+
+            comp = Compiler()
+            comp.initialize()
+            subprocess.check_call(
+                [
+                    comp.lib,
+                    "/def:libmxclient.def",
+                    "/machine:AMD64",
+                    "/out:libmxclient.lib",
+                ]
+            )
 
 
 class CustomBuild(build):

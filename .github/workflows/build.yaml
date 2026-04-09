@@ -78,13 +78,13 @@ jobs:
     needs:
       - changes
       - timestamp
-    if: ${{ needs.changes.outputs.pygomx == 'needsbuildfix' }}
+    if: ${{ needs.changes.outputs.pygomx == 'true' }}
     runs-on: ${{ matrix.os }}
     continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2022, windows-11-arm]
+        os: [windows-2022]
 
     steps:
       - uses: actions/checkout@v6
@@ -101,7 +101,9 @@ jobs:
           package-dir: pygomx
         env:
           SOURCE_DATE_EPOCH: ${{ needs.timestamp.outputs.sepoch }}
-          CIBW_SKIP: "*-win32"
+          CIBW_SKIP: "*-win32 *t-*"
+          PYGOMX_BUILD_MODE: shared
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair --add-path ${{ github.workspace }}\\pygomx -w {dest_dir} {wheel}"
 
       - name: upload artifacts
         uses: actions/upload-artifact@v7
@@ -153,7 +155,7 @@ jobs:
       - changes
       - pygomx-wheel-mac
       - pygomx-wheel-linux
-      #- pygomx-wheel-win
+      - pygomx-wheel-win
     if: ${{ needs.changes.outputs.pygomx == 'true' }}
     runs-on: ubuntu-latest
     environment:

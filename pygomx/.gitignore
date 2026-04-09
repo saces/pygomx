@@ -8,3 +8,5 @@ build/
 *.a
 __pycache__
 .eggs/
+libmxclient.*
+!libmxclient.def

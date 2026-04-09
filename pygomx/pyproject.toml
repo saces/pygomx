@@ -18,3 +18,8 @@ heimseite = "https://code.c-base.org/saces/pygomx"
 
 [tool.setuptools.package-dir]
 "pygomx" = "src/pygomx"
+
+# Use delvewheel on windows
+[tool.cibuildwheel.windows]
+before-build = "pip install delvewheel"
+repair-wheel-command = "delvewheel repair --add-path . -w {dest_dir} {wheel}"
