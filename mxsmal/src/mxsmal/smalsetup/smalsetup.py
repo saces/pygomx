@@ -9,7 +9,7 @@ from functools import partial, wraps
 import click
 from pygomx.errors import PygomxAPIError
 
-from pygomx import ApiV0
+from pygomx.apiv0 import ApiV0
 
 
 def catch_exception(func=None, *, handle):
@@ -53,7 +53,7 @@ def smalsetup(mxid, mxpassfile):
 
     now = int(time.time())
     result_dict["deviceid"] = f"smalbot-{now}"
-    result_dict["devicename"] = f"smalbot-{datetime.fromtimestamp(now)}"
+    result_dict["devicename"] = f"smalbot-{datetime.datetime.fromtimestamp(now)}"
 
     ApiV0.Login(result_dict, ".mxpass")
 
