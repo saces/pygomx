@@ -6,15 +6,22 @@ build-backend = "setuptools.build_meta"
 name = "pygomx"
 dynamic = ["version"]
 requires-python = ">=3.10"
-description = "python bindings for a golang matrix library"
+description = "a golang matrix high level client library with c-bindings for python"
 license = "AGPL-3.0-only"
 readme = "README.txt"
+keywords = ["matrix", "2.0", "bot", "client", "library"]
 
 dependencies = ["asyncio", "cffi>=2.0.0"]
 
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Libraries"
+]
+
 [project.urls]
-homepage = "https://codeberg.org/saces/pygomx"
-heimseite = "https://code.c-base.org/saces/pygomx"
+codeberg = "https://codeberg.org/saces/pygomx"
+c-base = "https://code.c-base.org/saces/pygomx"
 
 [tool.setuptools.package-dir]
 "pygomx" = "src/pygomx"
