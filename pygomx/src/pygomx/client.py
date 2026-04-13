@@ -80,7 +80,7 @@ class _AsyncClient:
         r = ApiV0Api.sendmessage(self.client_id, data_dict)
         return CheckApiResult(r)
 
-    def leaveroom(self, roomid):
+    async def leaveroom(self, roomid):
         r = ApiV0Api.leaveroom(self.client_id, roomid)
         CheckApiError(r)
 
@@ -88,9 +88,10 @@ class _AsyncClient:
         r = ApiV0Api.joinedrooms(self.client_id)
         return CheckApiResult(r)
 
-    def _createroom(self, data_dict):
+    async def createroom(self, data_dict):
         r = ApiV0Api.createroom(self.client_id, data_dict)
-        return CheckApiError(r)
+        return CheckApiResult(r)
+
 
     def process_event(self, evt):
         if hasattr(self, "on_event") and callable(self.on_event):

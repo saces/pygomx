@@ -19,6 +19,8 @@ def CheckApiErrorOnly(rstr):
     if rstr.startswith("ERR:"):
         raise PygomxAPIError(rstr)
 
+    return rstr
+
 
 def CheckApiError(rstr):
     if rstr.startswith("ERR:"):
