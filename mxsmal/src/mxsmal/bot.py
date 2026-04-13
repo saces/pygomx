@@ -39,6 +39,29 @@ class SMALBot(SMALApp):
         data["content"]["m.mentions"]["user_ids"] = [
             mxid,
         ]
+        data["content"]["m.relates_to"] = {"m.in_reply_to": {"event_id": msgid}}
+
+        await self._sendmessage(data)
+
+    async def sendmessagestartthread(self, roomid, msgid, mxid, text):
+        data = {}
+        data["roomid"] = roomid
+        data["content"] = {}
+        data["content"]["body"] = text
+        data["content"]["msgtype"] = "m.text"
+        data["content"]["m.mentions"] = {}
+        data["content"]["m.mentions"]["user_ids"] = [
+            mxid,
+        ]
+        data["content"]["m.relates_to"] = {"rel_type": "m.thread", "event_id": msgid}
+        await self._sendmessage(data)
+
+    async def sendnoticereply(self, roomid, msgid, mxid, text):
+        data = {}
+        data["roomid"] = roomid
+        data["content"] = {}
+        data["content"]["body"] = text
+        data["content"]["msgtype"] = "m.notice"
         data["content"]["m.relates_to"] = {}
         data["content"]["m.relates_to"]["m.in_reply_to"] = {}
         data["content"]["m.relates_to"]["m.in_reply_to"]["event_id"] = msgid
