@@ -5,6 +5,7 @@ apiv0_createclient_pass
 apiv0_createroom
 apiv0_deinitialize
 apiv0_discover
+apiv0_genericrequest
 apiv0_getoptions
 apiv0_initialize
 apiv0_joinedrooms

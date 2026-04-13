@@ -8,7 +8,7 @@ import threading
 from _pygomx import ffi, lib
 
 from .apiv0 import ApiV0Api
-from .errors import CheckApiError, CheckApiResult, PygomxAPIError
+from .errors import CheckApiError, CheckApiErrorOnly, CheckApiResult, PygomxAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +91,10 @@ class _AsyncClient:
     async def createroom(self, data_dict):
         r = ApiV0Api.createroom(self.client_id, data_dict)
         return CheckApiResult(r)
+
+    async def generic(self, method, path, data):
+        r = ApiV0Api.generic(self.client_id, method, path, data)
+        return CheckApiErrorOnly(r)
 
 
     def process_event(self, evt):

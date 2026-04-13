@@ -49,6 +49,14 @@ class ApiV0Api:
     def createroom(cid, data):
         return _stringresult(lib.apiv0_createroom(cid, _autodict(data)))
 
+    @staticmethod
+    def generic(cid, method, path, data):
+        return _stringresult(
+            lib.apiv0_genericrequest(
+                cid, _autostring(method), _autolist(path), _autodict(data)
+            )
+        )
+
 
 class ApiV0:
     """ApiV0"""

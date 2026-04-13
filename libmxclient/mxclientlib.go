@@ -397,6 +397,26 @@ func apiv0_joinedrooms(cid C.int) *C.char {
 	return C.CString(s)
 }
 
+//export apiv0_genericrequest
+func apiv0_genericrequest(cid C.int, method *C.char, path *C.char, data *C.char) *C.char {
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+	var bup mautrix.BaseURLPath
+	err = json.Unmarshal([]byte(C.GoString(path)), &bup)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+	urlPath := cli.BuildURLWithFullQuery(mautrix.BaseURLPath(bup), nil)
+	d := C.GoString(data)
+	resp, err := cli.MakeFullRequest(context.Background(), mautrix.FullRequest{Method: C.GoString(method), URL: urlPath, RequestBytes: []byte(d), ResponseJSON: nil})
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+	return C.CString(string(resp))
+}
+
 //export apiv0_createroom
 func apiv0_createroom(cid C.int, data *C.char) *C.char {
 	cli, err := getClient(int(cid))
