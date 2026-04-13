@@ -435,7 +435,54 @@ func apiv0_createroom(cid C.int, data *C.char) *C.char {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
 
-	out, err := json.Marshal(resp)
+	type roomResult struct {
+		RoomId   id.RoomID `json:"roomid"`
+		IsDirect bool      `json:"is_direct"`
+	}
+
+	out, err := json.Marshal(roomResult{RoomId: resp.RoomID, IsDirect: false})
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+	s := string(out)
+	return C.CString(s)
+}
+
+//export apiv0_createdm
+func apiv0_createdm(cid C.int, uid *C.char) *C.char {
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+
+	mxid := C.GoString(uid)
+
+	resp, err := cli.CreateDM(context.Background(), id.UserID(mxid))
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+
+	type roomResult struct {
+		RoomId   id.RoomID `json:"roomid"`
+		IsDirect bool      `json:"is_direct"`
+	}
+
+	out, err := json.Marshal(roomResult{RoomId: resp.RoomID, IsDirect: true})
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+	s := string(out)
+	return C.CString(s)
+}
+
+//export apiv0_getuserdm
+func apiv0_getuserdm(cid C.int, userid *C.char) *C.char {
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+	list := cli.GetUserDM(C.GoString(userid))
+	out, err := json.Marshal(list)
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}

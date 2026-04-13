@@ -30,3 +30,15 @@ def _autodict(xdict):
             return json.dumps(xdict).encode(encoding="utf-8")
         case _:
             raise TypeError("only str or bytes or dict allowed")
+
+
+def _autolist(xlist):
+    match xlist:
+        case bytes():
+            return xlist
+        case str():
+            return xlist.encode(encoding="utf-8")
+        case list():
+            return json.dumps(xlist).encode(encoding="utf-8")
+        case _:
+            raise TypeError("only str or bytes or list allowed")

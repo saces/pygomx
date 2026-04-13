@@ -87,6 +87,19 @@ func (mxc *MXClient) _storeDirectMap() error {
 	return nil
 }
 
+func (mxc *MXClient) GetUserDM(mxid string) []string {
+	var res = make([]string, 0)
+
+	for room, uids := range mxc._directMap {
+		for _, uid := range uids {
+			if uid.String() == mxid {
+				res = append(res, room.String())
+			}
+		}
+	}
+	return res
+}
+
 func (mxc *MXClient) _onEventMember(ctx context.Context, evt *event.Event) {
 	if evt.GetStateKey() == mxc.UserID.String() && evt.Content.AsMember().Membership == event.MembershipInvite {
 		if evt.Content.AsMember().IsDirect {
@@ -108,8 +121,18 @@ func (mxc *MXClient) _onEventMember(ctx context.Context, evt *event.Event) {
 				Str("inviter", evt.Sender.String()).
 				Msg("Failed to join room after invite")
 		}
+	} else if evt.Content.AsMember().Membership == event.MembershipJoin {
+		out, err := json.Marshal(evt)
+		if err != nil {
+			log.Error().Err(err).
+				Str("id", evt.ID.String()).
+				Str("joiner", evt.Sender.String()).
+				Msg("Marshalling error")
+			return
+		}
+		mxc.OnEvent(string(out))
 	} else {
-		fmt.Printf("\nGot member event: %#v\n", evt)
+		fmt.Printf("\nGot member event: %s\n%#v\n", evt.GetStateKey(), evt)
 	}
 }
 
@@ -159,6 +182,23 @@ func (mxc *MXClient) LeaveRoomAndForget(ctx context.Context, room id.RoomID) err
 		return err
 	}
 	return nil
+}
+
+func (mxc *MXClient) CreateDM(ctx context.Context, uid id.UserID) (resp *mautrix.RespCreateRoom, err error) {
+	req := mautrix.ReqCreateRoom{
+		IsDirect: true,
+		Preset:   "trusted_private_chat",
+		Invite:   []id.UserID{uid},
+	}
+
+	resp, err = mxc.CreateRoom(context.Background(), &req)
+	if err != nil {
+		return
+	}
+
+	mxc.AddDirectRoom(uid, resp.RoomID)
+	err = mxc._storeDirectMap()
+	return
 }
 
 type sendmessage_data struct {

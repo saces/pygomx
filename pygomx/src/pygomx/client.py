@@ -96,6 +96,13 @@ class _AsyncClient:
         r = ApiV0Api.generic(self.client_id, method, path, data)
         return CheckApiErrorOnly(r)
 
+    async def createdm(self, uid):
+        r = ApiV0Api.createdm(self.client_id, uid)
+        return CheckApiResult(r)
+
+    async def getuserdm(self, userid):
+        r = ApiV0Api.getuserdm(self.client_id, userid)
+        return CheckApiResult(r)
 
     def process_event(self, evt):
         if hasattr(self, "on_event") and callable(self.on_event):

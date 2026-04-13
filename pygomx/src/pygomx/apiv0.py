@@ -4,7 +4,7 @@ import logging
 
 from _pygomx import lib
 
-from .util import _stringresult, _autostring, _autodict
+from .util import _stringresult, _autostring, _autodict, _autolist
 from .errors import CheckApiError, CheckApiErrorOnly, CheckApiResult
 
 logger = logging.getLogger(__name__)
@@ -56,6 +56,14 @@ class ApiV0Api:
                 cid, _autostring(method), _autolist(path), _autodict(data)
             )
         )
+
+    @staticmethod
+    def createdm(cid, uid):
+        return _stringresult(lib.apiv0_createdm(cid, _autostring(uid)))
+
+    @staticmethod
+    def getuserdm(cid, userid):
+        return _stringresult(lib.apiv0_getuserdm(cid, _autostring(userid)))
 
 
 class ApiV0:
