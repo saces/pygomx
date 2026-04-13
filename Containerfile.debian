@@ -9,6 +9,9 @@ FROM docker.io/library/python:${PYTHON_VERSION}-${DEBIAN_VERSION} AS pybuilder
 ENV PYTHONUNBUFFERED=1
 ENV PIP_ROOT_USER_ACTION=ignore
 
+ENV PYGOMX_OLM_FLAVOR=colm
+ENV PYGOMX_BUILD_MODE=static
+
 RUN <<EOF
 # install packages
 set -eu
