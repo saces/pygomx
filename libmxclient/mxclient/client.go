@@ -115,11 +115,14 @@ func (mxc *MXClient) _onEventMember(ctx context.Context, evt *event.Event) {
 
 func (mxc *MXClient) _onMessage(ctx context.Context, evt *event.Event) {
 	out, err := json.Marshal(map[string]any{"sender": evt.Sender.String(),
-		"type":      evt.Type.String(),
-		"id":        evt.ID.String(),
-		"roomid":    evt.RoomID.String(),
-		"is_direct": mxc.IsDirectRoom(evt.RoomID),
-		"content":   evt.Content.Raw})
+		"type":             evt.Type.String(),
+		"server_timestamp": evt.Timestamp,
+		"id":               evt.ID.String(),
+		"roomid":           evt.RoomID.String(),
+		"is_direct":        mxc.IsDirectRoom(evt.RoomID),
+		"content":          evt.Content.Raw,
+		"redacts":          evt.Redacts,
+		"unsigned":         evt.Unsigned})
 
 	if err != nil {
 		log.Error().Err(err).
