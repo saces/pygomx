@@ -19,7 +19,8 @@ dependencies = [
     "asyncio",
     "cffi>=2.0.0",
     "click",
-    "pygomx>=2026.4.4.9.9",
+    "pygomx>=2026.4.9.20.41",
+    "dacite >= 1.9.2",
 ]
 
 [tool.setuptools.package-dir]
