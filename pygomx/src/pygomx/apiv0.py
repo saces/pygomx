@@ -65,6 +65,10 @@ class ApiV0Api:
     def getuserdm(cid, userid):
         return _stringresult(lib.apiv0_getuserdm(cid, _autostring(userid)))
 
+    @staticmethod
+    def joinroom(cid, roomid):
+        return _stringresult(lib.apiv0_joinroom(cid, _autostring(roomid)))
+
 
 class ApiV0:
     """ApiV0"""

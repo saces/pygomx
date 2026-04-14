@@ -88,6 +88,10 @@ class _AsyncClient:
         r = ApiV0Api.joinedrooms(self.client_id)
         return CheckApiResult(r)
 
+    async def joinroom(self, roomid):
+        r = ApiV0Api.joinroom(self.client_id)
+        return CheckApiResult(r)
+
     async def createroom(self, data_dict):
         r = ApiV0Api.createroom(self.client_id, data_dict)
         return CheckApiResult(r)

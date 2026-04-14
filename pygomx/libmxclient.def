@@ -11,6 +11,7 @@ apiv0_getoptions
 apiv0_getuserdm
 apiv0_initialize
 apiv0_joinedrooms
+apiv0_joinroom
 apiv0_leaveroom
 apiv0_listclients
 apiv0_login

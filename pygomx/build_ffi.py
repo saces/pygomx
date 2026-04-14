@@ -62,6 +62,7 @@ ffibuilder.cdef(
     extern char* apiv0_sendmessage(int cid, char* data);
     extern char* apiv0_leaveroom(int cid, char* roomid);
     extern char* apiv0_joinedrooms(int cid);
+    extern char* apiv0_joinroom(int cid, char* roomid);
     extern char* apiv0_createroom(int cid, char* data);
     extern char* apiv0_createdm(int cid, char* uid);
     extern char* apiv0_genericrequest(int cid, char* method, char* path, char* data);
