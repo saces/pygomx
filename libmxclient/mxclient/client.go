@@ -189,6 +189,16 @@ func (mxc *MXClient) CreateDM(ctx context.Context, uid id.UserID) (resp *mautrix
 		IsDirect: true,
 		Preset:   "trusted_private_chat",
 		Invite:   []id.UserID{uid},
+		InitialState: []*event.Event{{
+			Type: event.StateEncryption,
+			Content: event.Content{
+				Parsed: &event.EncryptionEventContent{
+					Algorithm:              id.AlgorithmMegolmV1,
+					RotationPeriodMillis:   604800000,
+					RotationPeriodMessages: 100,
+				},
+			}},
+		},
 	}
 
 	resp, err = mxc.CreateRoom(context.Background(), &req)
