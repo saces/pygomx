@@ -60,6 +60,8 @@ go.mau.fi/util v0.9.7 h1:AWGNbJfz1zRcQOKeOEYhKUG2fT+/26Gy6kyqcH8tnBg=
 go.mau.fi/util v0.9.7/go.mod h1:5T2f3ZWZFAGgmFwg3dGw7YK6kIsb9lryDzvynoR98pE=
 go.mau.fi/util v0.9.8-0.20260406161447-0300c476893a h1:OQQF3rTJH10l6+dcP0OKnYbNDMBTGoIZZINNJm8QBG8=
 go.mau.fi/util v0.9.8-0.20260406161447-0300c476893a/go.mod h1:5T2f3ZWZFAGgmFwg3dGw7YK6kIsb9lryDzvynoR98pE=
+go.mau.fi/util v0.9.8 h1:+/jf8eM2dAT2wx9UidmaneH28r/CSCKCniCyby1qWz8=
+go.mau.fi/util v0.9.8/go.mod h1:up/5mbzH2M1pSBNXqRxODn8dg/hEKbLJu92W4/SNAX0=
 golang.org/x/crypto v0.47.0 h1:V6e3FRj+n4dbpw86FJ8Fv7XVOql7TEwpHapKoMJ/GO8=
 golang.org/x/crypto v0.47.0/go.mod h1:ff3Y9VzzKbwSSEzWqJsJVBnWmRwRSHt/6Op5n9bQc4A=
 golang.org/x/crypto v0.48.0 h1:/VRzVqiRSggnhY7gNRxPauEQ5Drw9haKdM0jqfcCFts=
@@ -117,3 +119,5 @@ maunium.net/go/mautrix v0.26.5-0.20260413182302-f3fab8d38470 h1:vehV8Ev2TzpV5DH9
 maunium.net/go/mautrix v0.26.5-0.20260413182302-f3fab8d38470/go.mod h1:MX4DQLiBe0c7sI/wizruqdxHinSOWs42/DYsP9GH7Q4=
 maunium.net/go/mautrix v0.26.5-0.20260415212519-aa49a44fe395 h1:tJX3I0CSxuZAaAeF4VRiurfsYow8N2qOgr7k5wNbtVo=
 maunium.net/go/mautrix v0.26.5-0.20260415212519-aa49a44fe395/go.mod h1:MX4DQLiBe0c7sI/wizruqdxHinSOWs42/DYsP9GH7Q4=
+maunium.net/go/mautrix v0.27.0 h1:yfEYwoIluVWkofUgbZl9gP4i5nQTF+QNsxtb+r5bKlM=
+maunium.net/go/mautrix v0.27.0/go.mod h1:7QpEQiTy6p4LHkXXaZI+N46tGYy8HMhD0JjzZAFoFWs=

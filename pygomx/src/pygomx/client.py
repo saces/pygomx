@@ -100,6 +100,44 @@ class _AsyncClient:
         r = ApiV0Api.generic(self.client_id, method, path, data)
         return CheckApiErrorOnly(r)
 
+    async def room_send_message(self, roomid, eventtype, content):
+        r = ApiV0Api.room_send_message(self.client_id, roomid, eventtype, content)
+        return CheckApiResult(r)
+
+    async def room_send_state(self, roomid, eventtype, statekey, content):
+        r = ApiV0Api.room_send_state(
+            self.client_id, roomid, eventtype, statekey, content
+        )
+        return CheckApiResult(r)
+
+    async def room_get_state(self, roomid, eventtype, statekey):
+        r = ApiV0Api.room_get_state(self.client_id, roomid, eventtype, statekey)
+        return CheckApiResult(r)
+
+    async def account_get_data(self, name):
+        r = ApiV0Api.account_getdata(self.client_id, name)
+        return CheckApiResult(r)
+
+    async def account_set_data(self, name, data):
+        r = ApiV0Api.account_setdata(self.client_id, name, data)
+        return CheckApiError(r)
+
+    async def room_get_accountdata(self, roomid, name):
+        r = ApiV0Api.room_get_accountdata(self.client_id, roomid, name)
+        return CheckApiResult(r)
+
+    async def room_set_accountdata(self, roomid, name, data):
+        r = ApiV0Api.room_set_accountdata(self.client_id, roomid, name, data)
+        return CheckApiError(r)
+
+    async def redact_event(self, roomid, eventid, reason):
+        r = ApiV0Api.redact_event(self.client_id, roomid, eventid, reason)
+        return CheckApiResult(r)
+
+    async def getevent(self, roomid, eventid):
+        r = ApiV0Api.getevent(self.client_id, roomid, eventid)
+        return CheckApiResult(r)
+
     async def createdm(self, uid):
         r = ApiV0Api.createdm(self.client_id, uid)
         return CheckApiResult(r)

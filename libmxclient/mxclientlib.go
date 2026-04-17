@@ -13,6 +13,7 @@ import (
 	"unsafe"
 
 	"maunium.net/go/mautrix"
+	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 )
 
@@ -37,7 +38,59 @@ static inline void call_c_on_sys_handler(on_message_handler_ptr ptr, char* jsonS
 */
 import "C"
 
+/*
+error types
+*/
+
 var apiCanceled = errors.New("canceled by api call")
+
+/*
+type conversion helpers with some basic validation
+*/
+
+func c2RoomID(roomid *C.char) (id.RoomID, error) {
+	rid := C.GoString(roomid)
+	if rid == "" || rid[0] != '!' {
+		return "", errors.New("invalid room id")
+	}
+	return id.RoomID(rid), nil
+}
+
+func c2EventID(eventid *C.char) (id.EventID, error) {
+	eid := C.GoString(eventid)
+	if eid == "" || eid[0] != '$' {
+		return "", errors.New("invalid event id")
+	}
+	return id.EventID(eid), nil
+}
+
+func c2EventType(eventtype *C.char) (et event.Type, err error) {
+	err = et.UnmarshalText([]byte(C.GoString(eventtype)))
+	return
+}
+
+func c2ContentJSON(contentjson *C.char) (contentJSON any, err error) {
+	err = json.Unmarshal([]byte(C.GoString(contentjson)), &contentJSON)
+	return
+}
+
+func returnJSON(out any, err error) *C.char {
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+	res, err := json.Marshal(out)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERR: %v", err))
+	}
+	return C.CString(string(res))
+}
+
+func returnErr(err error) *C.char {
+	if err == nil {
+		return C.CString("SUCCESS.")
+	}
+	return C.CString(fmt.Sprintf("ERR: %v", err))
+}
 
 /*
 matrix client with c callback
@@ -86,7 +139,7 @@ func (cli *CBClient) Set_on_sys_handler(fn C.on_sys_handler_ptr, pobj unsafe.Poi
 	cli.on_sys_handler_pobj = pobj
 }
 
-// NewCClient creates a new Matrix Client ready for syncing
+// NewCBClient creates a new Matrix Client ready for syncing
 func NewCBClient(homeserverURL string, userID id.UserID, accessToken string) (*CBClient, error) {
 	client, err := mxclient.NewMXClient(homeserverURL, userID, accessToken)
 	if err != nil {
@@ -355,35 +408,188 @@ func apiv0_sendmessage(cid C.int, data *C.char) *C.char {
 	return C.CString(s)
 }
 
+//export apiv0_sendmessageevent
+func apiv0_sendmessageevent(cid C.int, roomid *C.char, eventtype *C.char, contentjson *C.char) *C.char {
+	roomID, err := c2RoomID(roomid)
+	if err != nil {
+		return returnErr(err)
+	}
+	eventType, err := c2EventType(eventtype)
+	if err != nil {
+		return returnErr(err)
+	}
+	contentJSON, err := c2ContentJSON(contentjson)
+	if err != nil {
+		return returnErr(err)
+	}
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return returnErr(err)
+	}
+	return returnJSON(cli.SendMessageEvent(context.Background(), roomID, eventType, contentJSON))
+}
+
+//export apiv0_sendstateevent
+func apiv0_sendstateevent(cid C.int, roomid *C.char, eventtype *C.char, statekey *C.char, contentjson *C.char) *C.char {
+	roomID, err := c2RoomID(roomid)
+	if err != nil {
+		return returnErr(err)
+	}
+	eventType, err := c2EventType(eventtype)
+	if err != nil {
+		return returnErr(err)
+	}
+	contentJSON, err := c2ContentJSON(contentjson)
+	if err != nil {
+		return returnErr(err)
+	}
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return returnErr(err)
+	}
+
+	return returnJSON(cli.SendStateEvent(context.Background(), roomID, eventType, C.GoString(statekey), contentJSON))
+}
+
+//export apiv0_stateevent
+func apiv0_stateevent(cid C.int, roomid *C.char, eventtype *C.char, statekey *C.char) *C.char {
+	roomID, err := c2RoomID(roomid)
+	if err != nil {
+		return returnErr(err)
+	}
+	eventType, err := c2EventType(eventtype)
+	if err != nil {
+		return returnErr(err)
+	}
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return returnErr(err)
+	}
+
+	var outContent any
+	err = cli.StateEvent(context.Background(), roomID, eventType, C.GoString(statekey), outContent)
+	return returnJSON(outContent, err)
+}
+
+//export apiv0_getaccountdata
+func apiv0_getaccountdata(cid C.int, name *C.char) *C.char {
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return returnErr(err)
+	}
+	var outContent any
+	err = cli.GetAccountData(context.Background(), C.GoString(name), &outContent)
+	return returnJSON(outContent, err)
+}
+
+//export apiv0_setaccountdata
+func apiv0_setaccountdata(cid C.int, name *C.char, data *C.char) *C.char {
+	contentJSON, err := c2ContentJSON(data)
+	if err != nil {
+		return returnErr(err)
+	}
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return returnErr(err)
+	}
+	return returnErr(cli.SetAccountData(context.Background(), C.GoString(name), contentJSON))
+}
+
+//export apiv0_getroomaccountdata
+func apiv0_getroomaccountdata(cid C.int, roomid *C.char, name *C.char) *C.char {
+	roomID, err := c2RoomID(roomid)
+	if err != nil {
+		return returnErr(err)
+	}
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return returnErr(err)
+	}
+	var outContent any
+	err = cli.GetRoomAccountData(context.Background(), roomID, C.GoString(name), &outContent)
+	return returnJSON(outContent, err)
+}
+
+//export apiv0_setroomaccountdata
+func apiv0_setroomaccountdata(cid C.int, roomid *C.char, name *C.char, data *C.char) *C.char {
+	roomID, err := c2RoomID(roomid)
+	if err != nil {
+		return returnErr(err)
+	}
+	contentJSON, err := c2ContentJSON(data)
+	if err != nil {
+		return returnErr(err)
+	}
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return returnErr(err)
+	}
+	return returnErr(cli.SetRoomAccountData(context.Background(), roomID, C.GoString(name), contentJSON))
+}
+
+//export apiv0_redactevent
+func apiv0_redactevent(cid C.int, roomid *C.char, eventid *C.char, reason *C.char) *C.char {
+	roomID, err := c2RoomID(roomid)
+	if err != nil {
+		return returnErr(err)
+	}
+	eventID, err := c2EventID(eventid)
+	if err != nil {
+		return returnErr(err)
+	}
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return returnErr(err)
+	}
+	var req mautrix.ReqRedact
+	req.Reason = C.GoString(reason)
+	resp, err := cli.RedactEvent(context.Background(), roomID, eventID, req)
+	return returnJSON(resp, err)
+}
+
+//export apiv0_getevent
+func apiv0_getevent(cid C.int, roomid *C.char, eventid *C.char) *C.char {
+	roomID, err := c2RoomID(roomid)
+	if err != nil {
+		return returnErr(err)
+	}
+	eventID, err := c2EventID(eventid)
+	if err != nil {
+		return returnErr(err)
+	}
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return returnErr(err)
+	}
+	resp, err := cli.GetEvent(context.Background(), roomID, eventID)
+	return returnJSON(resp, err)
+}
+
 //export apiv0_leaveroom
 func apiv0_leaveroom(cid C.int, roomid *C.char) *C.char {
+	roomID, err := c2RoomID(roomid)
+	if err != nil {
+		return returnErr(err)
+	}
 	cli, err := getClient(int(cid))
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
-	err = cli.LeaveRoomAndForget(context.Background(), id.RoomID(C.GoString(roomid)))
-	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
-	}
-	return C.CString("SUCCESS.")
+	return returnErr(cli.LeaveRoomAndForget(context.Background(), roomID))
 }
 
 //export apiv0_joinroom
 func apiv0_joinroom(cid C.int, roomid *C.char) *C.char {
+	roomID, err := c2RoomID(roomid)
+	if err != nil {
+		return returnErr(err)
+	}
 	cli, err := getClient(int(cid))
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
-	resp, err := cli.JoinRoomByID(context.Background(), id.RoomID(C.GoString(roomid)))
-	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
-	}
-	out, err := json.Marshal(resp)
-	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
-	}
-	s := string(out)
-	return C.CString(s)
+	resp, err := cli.JoinRoomByID(context.Background(), roomID)
+	return returnJSON(resp, err)
 }
 
 //export apiv0_joinedrooms
@@ -407,12 +613,7 @@ func apiv0_joinedrooms(cid C.int) *C.char {
 	for _, room := range resp.JoinedRooms {
 		roomList = append(roomList, roomListItem{RoomId: room, IsDirect: cli.IsDirectRoom(room)})
 	}
-	out, err := json.Marshal(roomList)
-	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
-	}
-	s := string(out)
-	return C.CString(s)
+	return returnJSON(roomList, nil)
 }
 
 //export apiv0_genericrequest
@@ -429,10 +630,7 @@ func apiv0_genericrequest(cid C.int, method *C.char, path *C.char, data *C.char)
 	urlPath := cli.BuildURLWithFullQuery(mautrix.BaseURLPath(bup), nil)
 	d := C.GoString(data)
 	resp, err := cli.MakeFullRequest(context.Background(), mautrix.FullRequest{Method: C.GoString(method), URL: urlPath, RequestBytes: []byte(d), ResponseJSON: nil})
-	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
-	}
-	return C.CString(string(resp))
+	return returnJSON(resp, err)
 }
 
 //export apiv0_createroom
@@ -500,12 +698,7 @@ func apiv0_getuserdm(cid C.int, userid *C.char) *C.char {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
 	list := cli.GetUserDM(C.GoString(userid))
-	out, err := json.Marshal(list)
-	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
-	}
-	s := string(out)
-	return C.CString(s)
+	return returnJSON(list, nil)
 }
 
 //export apiv0_removeclient

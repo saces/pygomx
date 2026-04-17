@@ -17,6 +17,15 @@ apiv0_listclients
 apiv0_login
 apiv0_removeclient
 apiv0_sendmessage
+apiv0_sendmessageevent
+apiv0_sendstateevent
+apiv0_stateevent
+apiv0_getaccountdata
+apiv0_setaccountdata
+apiv0_getroomaccountdata
+apiv0_setroomaccountdata
+apiv0_redactevent
+apiv0_getevent
 apiv0_set_on_event_handler
 apiv0_set_on_message_handler
 apiv0_set_on_sys_handler

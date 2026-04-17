@@ -302,6 +302,7 @@ func NewMXClient(homeserverURL string, userID id.UserID, accessToken string) (*M
 	syncer.OnEventType(event.EventMessage, mxclient._onMessage)
 	syncer.OnEventType(event.StateMember, mxclient._onEventMember)
 	syncer.OnEventType(event.AccountDataDirectChats, mxclient._onAccountDataDM)
+	syncer.OnEventType(event.EventRedaction, mxclient._onMessage)
 
 	mxclient._loadDirectMap()
 

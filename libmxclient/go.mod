@@ -5,8 +5,8 @@ go 1.25.0
 require (
 	github.com/mattn/go-sqlite3 v1.14.42
 	github.com/rs/zerolog v1.35.0
-	go.mau.fi/util v0.9.8-0.20260406161447-0300c476893a
-	maunium.net/go/mautrix v0.26.5-0.20260415212519-aa49a44fe395
+	go.mau.fi/util v0.9.8
+	maunium.net/go/mautrix v0.27.0
 )
 
 require (

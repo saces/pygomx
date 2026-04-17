@@ -58,6 +58,72 @@ class ApiV0Api:
         )
 
     @staticmethod
+    def room_send_message(cid, roomid, eventtype, content):
+        return _stringresult(
+            lib.apiv0_sendmessageevent(
+                cid, _autostring(roomid), _autostring(eventtype), _autodict(content)
+            )
+        )
+
+    @staticmethod
+    def room_send_state(cid, roomid, eventtype, statekey, content):
+        return _stringresult(
+            lib.apiv0_sendstateevent(
+                cid,
+                _autostring(roomid),
+                _autostring(eventtype),
+                _autostring(statekey),
+                _autodict(content),
+            )
+        )
+
+    @staticmethod
+    def room_get_state(cid, roomid, eventtype, statekey):
+        return _stringresult(
+            lib.apiv0_stateevent(
+                cid,
+                _autostring(roomid),
+                _autostring(eventtype),
+                _autostring(statekey),
+            )
+        )
+
+    @staticmethod
+    def redact_event(cid, roomid, eventid, reason):
+        return _stringresult(
+            lib.apiv0_redactevent(
+                cid,
+                _autostring(roomid),
+                _autostring(eventid),
+                _autostring(reason),
+            )
+        )
+
+    @staticmethod
+    def account_getdata(cid, name):
+        return _stringresult(lib.apiv0_getaccountdata(cid, _autostring(name)))
+
+    @staticmethod
+    def account_setdata(cid, name, data):
+        return _stringresult(
+            lib.apiv0_setaccountdata(cid, _autostring(name), _autodict(data))
+        )
+
+    @staticmethod
+    def room_get_accountdata(cid, roomid, name):
+        return _stringresult(
+            lib.apiv0_getroomaccountdata(cid, _autostring(roomid), _autostring(name))
+        )
+
+    @staticmethod
+    def room_set_accountdata(cid, roomid, name, data):
+        return _stringresult(
+            lib.apiv0_setroomaccountdata(
+                cid, _autostring(roomid), _autostring(name), _autodict(data)
+            )
+        )
+
+    @staticmethod
     def createdm(cid, uid):
         return _stringresult(lib.apiv0_createdm(cid, _autostring(uid)))
 
@@ -68,6 +134,12 @@ class ApiV0Api:
     @staticmethod
     def joinroom(cid, roomid):
         return _stringresult(lib.apiv0_joinroom(cid, _autostring(roomid)))
+
+    @staticmethod
+    def getevent(cid, roomid, eventid):
+        return _stringresult(
+            lib.apiv0_getevent(cid, _autostring(roomid), _autostring(eventid))
+        )
 
 
 class ApiV0:
