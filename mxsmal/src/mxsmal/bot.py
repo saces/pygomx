@@ -27,7 +27,7 @@ class SMALBot(SMALApp):
         data["content"]["body"] = text
         data["content"]["msgtype"] = "m.text"
 
-        await self._sendmessage(data)
+        return await self._sendmessage(data)
 
     async def sendmessagereply(self, roomid, msgid, mxid, text):
         data = {}
@@ -41,7 +41,7 @@ class SMALBot(SMALApp):
         ]
         data["content"]["m.relates_to"] = {"m.in_reply_to": {"event_id": msgid}}
 
-        await self._sendmessage(data)
+        return await self._sendmessage(data)
 
     async def sendmessagestartthread(self, roomid, msgid, mxid, text):
         data = {}
@@ -54,7 +54,7 @@ class SMALBot(SMALApp):
             mxid,
         ]
         data["content"]["m.relates_to"] = {"rel_type": "m.thread", "event_id": msgid}
-        await self._sendmessage(data)
+        return await self._sendmessage(data)
 
     async def sendnoticereply(self, roomid, msgid, mxid, text):
         data = {}
@@ -66,7 +66,7 @@ class SMALBot(SMALApp):
         data["content"]["m.relates_to"]["m.in_reply_to"] = {}
         data["content"]["m.relates_to"]["m.in_reply_to"]["event_id"] = msgid
 
-        await self._sendmessage(data)
+        return await self._sendmessage(data)
 
     async def sendnotice(self, roomid, text):
         data = {}
@@ -75,4 +75,4 @@ class SMALBot(SMALApp):
         data["content"]["body"] = text
         data["content"]["msgtype"] = "m.notice"
 
-        await self._sendmessage(data)
+        return await self._sendmessage(data)
