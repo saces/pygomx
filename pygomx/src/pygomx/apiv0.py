@@ -141,6 +141,10 @@ class ApiV0Api:
             lib.apiv0_getevent(cid, _autostring(roomid), _autostring(eventid))
         )
 
+    @staticmethod
+    def self_sign(cid):
+        return _stringresult(lib.apiv0_self_sign(cid))
+
 
 class ApiV0:
     """ApiV0"""

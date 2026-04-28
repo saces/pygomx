@@ -701,6 +701,16 @@ func apiv0_getuserdm(cid C.int, userid *C.char) *C.char {
 	return returnJSON(list, nil)
 }
 
+//export apiv0_self_sign
+func apiv0_self_sign(cid C.int) *C.char {
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return returnErr(err)
+	}
+	err = cli.SelfSign(context.Background())
+	return returnErr(err)
+}
+
 //export apiv0_removeclient
 func apiv0_removeclient(cid C.int) C.int {
 	return 0

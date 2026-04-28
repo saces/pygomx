@@ -76,6 +76,7 @@ ffibuilder.cdef(
     extern char* apiv0_createdm(int cid, char* uid);
     extern char* apiv0_genericrequest(int cid, char* method, char* path, char* data);
     extern char* apiv0_getuserdm(int cid, char* userid);
+    extern char* apiv0_self_sign(int cid);
     extern int   apiv0_removeclient(int cid);
     extern char* apiv0_listclients();
     extern char* apiv0_getoptions(int cid);

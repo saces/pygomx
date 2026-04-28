@@ -232,6 +232,57 @@ func (mxc *MXClient) SendRoomMessage(ctx context.Context, data string) (*mautrix
 
 }
 
+func (mxc *MXClient) SelfSign(ctx context.Context) error {
+
+	log := zerolog.Ctx(ctx)
+
+	helper := mxc.Crypto.(*cryptohelper.CryptoHelper)
+
+	mach := helper.Machine()
+
+	hasKeys, isVerified, err := mach.GetOwnVerificationStatus(ctx)
+	if err != nil {
+		//log.WithLevel(zerolog.FatalLevel).Err(err).Msg("Failed to check verification status")
+		return err
+	}
+	log.Debug().Bool("has_keys", hasKeys).Bool("is_verified", isVerified).Msg("Checked verification status")
+
+	// TODO
+	// get recovery key from mxpass (base58)
+	// for now only 'new' is supported
+	keyInDB := ""
+	if !hasKeys || keyInDB == "overwrite" {
+		if keyInDB != "" && keyInDB != "overwrite" {
+			//log.WithLevel(zerolog.FatalLevel).
+			//	Msg("No keys on server, but database already has recovery key. Delete `recovery_key` from `kv_store` manually to continue.")
+			return errors.New("")
+		}
+		recoveryKey, err := mach.GenerateAndVerifyWithRecoveryKey(ctx)
+		if recoveryKey != "" {
+			// TODO
+			// store recovery key in mxpass (base58)
+		}
+		if err != nil {
+			//log.WithLevel(zerolog.FatalLevel).Err(err).Msg("Failed to generate recovery key and self-sign")
+			return err
+		}
+		log.Info().Msg("Generated new recovery key and self-signed bot device")
+	} else if !isVerified {
+		if keyInDB == "" {
+			//log.WithLevel(zerolog.FatalLevel).
+			//	Msg("Server already has cross-signing keys, but no key in database. Add `recovery_key` to `kv_store`, or set it to `overwrite` to generate new keys.")
+			return errors.New("")
+		}
+		err = mach.VerifyWithRecoveryKey(ctx, keyInDB)
+		if err != nil {
+			log.WithLevel(zerolog.FatalLevel).Err(err).Msg("Failed to verify with recovery key")
+			return err
+		}
+		log.Info().Msg("Verified bot device with existing recovery key")
+	}
+	return nil
+}
+
 // NewMXClient creates a new Matrix Client ready for syncing
 func NewMXClient(homeserverURL string, userID id.UserID, accessToken string) (*MXClient, error) {
 	client, err := mautrix.NewClient(homeserverURL, userID, accessToken)
