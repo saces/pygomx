@@ -47,7 +47,7 @@ ffibuilder.cdef(
     extern char* cliv0_clearaccount(char* hs, char* accessToken);
     extern char* cliv0_serverinfo(char* url);
     extern char* cliv0_mxpassitem(char* mxpassfile, char* hs, char* localpart, char* domain);
-    extern char* cliv0_genericrequest(char* hs, char* accessToken, char* req);
+    extern char* cliv0_generic_request(char* hs, char* access_token, char* method, char* path, char* data);
     extern int   apiv0_initialize();
     extern int   apiv0_deinitialize();
     extern char* apiv0_discover(char* mxid);
@@ -74,7 +74,7 @@ ffibuilder.cdef(
     extern char* apiv0_joinroom(int cid, char* roomid);
     extern char* apiv0_createroom(int cid, char* data);
     extern char* apiv0_createdm(int cid, char* uid);
-    extern char* apiv0_genericrequest(int cid, char* method, char* path, char* data);
+    extern char* apiv0_generic_request(int cid, char* method, char* path, char* data);
     extern char* apiv0_getuserdm(int cid, char* userid);
     extern char* apiv0_self_sign(int cid);
     extern int   apiv0_removeclient(int cid);

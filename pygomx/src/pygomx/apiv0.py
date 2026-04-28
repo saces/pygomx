@@ -52,7 +52,7 @@ class ApiV0Api:
     @staticmethod
     def generic(cid, method, path, data):
         return _stringresult(
-            lib.apiv0_genericrequest(
+            lib.apiv0_generic_request(
                 cid, _autostring(method), _autolist(path), _autodict(data)
             )
         )

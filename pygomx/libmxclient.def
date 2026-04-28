@@ -6,7 +6,7 @@ apiv0_createroom
 apiv0_createdm
 apiv0_deinitialize
 apiv0_discover
-apiv0_genericrequest
+apiv0_generic_request
 apiv0_getoptions
 apiv0_getuserdm
 apiv0_initialize
@@ -36,7 +36,7 @@ apiv0_self_sign
 cliv0_accountinfo
 cliv0_clearaccount
 cliv0_discoverhs
-cliv0_genericrequest
+cliv0_generic_request
 cliv0_mkmxtoken
 cliv0_mxpassitem
 cliv0_serverinfo

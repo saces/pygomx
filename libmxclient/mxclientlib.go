@@ -245,16 +245,26 @@ func cliv0_mxpassitem(mxpassfile_path *C.char, url *C.char, localpart *C.char, d
 	return C.CString(s)
 }
 
-//export cliv0_genericrequest
-func cliv0_genericrequest(hs *C.char, tk *C.char, reqData *C.char) *C.char {
-	_hs := C.GoString(hs)
-	_tk := C.GoString(tk)
-	_reqData := C.GoString(reqData)
-	resp, err := mxutils.GenericRequest(_hs, _tk, _reqData)
+//export cliv0_generic_request
+func cliv0_generic_request(hs_url *C.char, access_token *C.char, method *C.char, path *C.char, data *C.char) *C.char {
+	var bup mautrix.BaseURLPath
+	err := json.Unmarshal([]byte(C.GoString(path)), &bup)
 	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v\n%s", err, resp))
+		return returnErr(err)
 	}
-	return C.CString(resp)
+
+	mauclient, err := mautrix.NewClient(C.GoString(hs_url), "", C.GoString(access_token))
+	if err != nil {
+		return returnErr(err)
+	}
+
+	urlPath := mauclient.BuildURLWithFullQuery(bup, nil)
+	resp, err := mauclient.MakeFullRequest(context.Background(), mautrix.FullRequest{
+		Method: C.GoString(method), URL: urlPath, RequestBytes: []byte(C.GoString(data)), ResponseJSON: nil})
+	if err != nil {
+		return returnErr(err)
+	}
+	return C.CString(string(resp))
 }
 
 /*
@@ -616,20 +626,19 @@ func apiv0_joinedrooms(cid C.int) *C.char {
 	return returnJSON(roomList, nil)
 }
 
-//export apiv0_genericrequest
-func apiv0_genericrequest(cid C.int, method *C.char, path *C.char, data *C.char) *C.char {
+//export apiv0_generic_request
+func apiv0_generic_request(cid C.int, method *C.char, path *C.char, data *C.char) *C.char {
 	cli, err := getClient(int(cid))
 	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
+		return returnErr(err)
 	}
 	var bup mautrix.BaseURLPath
 	err = json.Unmarshal([]byte(C.GoString(path)), &bup)
 	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
+		return returnErr(err)
 	}
 	urlPath := cli.BuildURLWithFullQuery(mautrix.BaseURLPath(bup), nil)
-	d := C.GoString(data)
-	resp, err := cli.MakeFullRequest(context.Background(), mautrix.FullRequest{Method: C.GoString(method), URL: urlPath, RequestBytes: []byte(d), ResponseJSON: nil})
+	resp, err := cli.MakeFullRequest(context.Background(), mautrix.FullRequest{Method: C.GoString(method), URL: urlPath, RequestBytes: []byte(C.GoString(data)), ResponseJSON: nil})
 	return returnJSON(resp, err)
 }
 

@@ -96,7 +96,7 @@ class _AsyncClient:
         r = ApiV0Api.createroom(self.client_id, data_dict)
         return CheckApiResult(r)
 
-    async def generic(self, method, path, data):
+    async def generic(self, method, path, data=None):
         r = ApiV0Api.generic(self.client_id, method, path, data)
         return CheckApiErrorOnly(r)
 

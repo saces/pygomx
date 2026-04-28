@@ -22,6 +22,8 @@ def _autostring(xstr):
 
 def _autodict(xdict):
     match xdict:
+        case None:
+            return b""
         case bytes():
             return xdict
         case str():

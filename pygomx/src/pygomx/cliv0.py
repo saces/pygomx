@@ -3,7 +3,7 @@
 from _pygomx import lib
 from .errors import CheckApiResult
 
-from .util import _stringresult, _autostring, _autodict
+from .util import _stringresult, _autostring, _autodict, _autolist
 
 
 class CliV0Api:
@@ -29,11 +29,13 @@ class CliV0Api:
         )
 
     @staticmethod
-    def generic(hs_url, token, data):
+    def generic(hs_url, access_token, method, path, data):
         return _stringresult(
-            lib.cliv0_genericrequest(
+            lib.cliv0_generic_request(
                 _autostring(hs_url),
-                _autostring(token),
+                _autostring(access_token),
+                _autostring(method),
+                _autolist(path),
                 _autodict(data),
             )
         )
@@ -76,10 +78,10 @@ class CliV0:
         res = CliV0Api.whoami(self.hs_url, self.token)
         return CheckApiResult(res)
 
-    def Generic(self, data, omitt_token=False):
+    def Generic(self, method, path, data=None, omitt_token=False):
         if omitt_token:
             token = ""
         else:
             token = self.token
-        res = CliV0Api.generic(self.hs_url, token, data)
+        res = CliV0Api.generic(self.hs_url, token, method, path, data)
         return CheckApiResult(res)
