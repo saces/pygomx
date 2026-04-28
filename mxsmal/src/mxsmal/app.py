@@ -30,17 +30,18 @@ class SMALApp(_AsyncClient):
     def __init__(self):
         super().__init__()
 
-    def run(self):
-        asyncio.run(self.main_loop())
+    def run(self, sync=True):
+        asyncio.run(self.main_loop(sync))
 
-    async def main_loop(self):
+    async def main_loop(self, sync):
         if hasattr(self, "on_startup") and callable(self.on_startup):
             await self.on_startup()
 
         if hasattr(self, "on_startup_run") and callable(self.on_startup_run):
             await asyncio.ensure_future(self.on_startup_run())
 
-        await self._sync()
+        if sync:
+            await self._sync()
 
     def stop(self):
         self._stopsync()
