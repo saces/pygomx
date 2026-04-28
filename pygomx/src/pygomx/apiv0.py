@@ -155,14 +155,7 @@ class ApiV0:
         return CheckApiResult(res)
 
     @staticmethod
-    def Login(data: dict, mxpassfile: str):
-        withpass = False
-        if mxpassfile is not None and len(mxpassfile.strip()) > 0:
-            data["mxpassfile"] = mxpassfile
-            withpass = True
-        res = ApiV0Api.login(data)
-        if withpass:
-            CheckApiError(res)
-        else:
-            CheckApiErrorOnly(res)
-            return res
+    def Login(login_info: dict):
+        res = ApiV0Api.login(login_info)
+        CheckApiErrorOnly(res)
+        return res

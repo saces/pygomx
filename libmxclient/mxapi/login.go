@@ -4,8 +4,6 @@ package mxapi
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -15,56 +13,47 @@ import (
 	"maunium.net/go/mautrix/id"
 )
 
-type login_data struct {
-	Homeserver      string `json:"homeserver"`
-	Mxid            string `json:"mxid"`
-	Loginname       string `json:"loginname"`
-	Password        string `json:"password"`
-	DeviceID        string `json:"deviceid"`
-	DeviceName      string `json:"devicename"`
-	MXPassFile      string `json:"mxpassfile"`
-	MakeMasterKey   bool   `json:"make_master_key"`
-	MakeRecoveryKey bool   `json:"make_recovery_key"`
+type LoginInfo struct {
+	DiscoverInfo DiscoverInfo `json:"discover_info"`
+	Password     string       `json:"password"`
+	DeviceID     id.DeviceID  `json:"deviceid"`
+	DeviceName   string       `json:"devicename"`
+	MXPassFile   string       `json:"mxpassfile"`
 }
 
-func Login(data string) (string, error) {
-	var ld login_data
-	err := json.Unmarshal([]byte(data), &ld)
-	if err != nil {
-		return "", err
-	}
+func Login(li *LoginInfo) (string, error) {
 
-	if ld.MXPassFile != "" {
-		if _, err := os.Stat(ld.MXPassFile); err == nil {
-			return "", fmt.Errorf("mxpassfile '%s' already exists", ld.MXPassFile)
+	if li.MXPassFile != "" {
+		if _, err := os.Stat(li.MXPassFile); err == nil {
+			return "", fmt.Errorf("mxpassfile '%s' already exists", li.MXPassFile)
 		} else if !errors.Is(err, os.ErrNotExist) {
 			return "", fmt.Errorf("error while checking mxpassfile: %v", err)
 		}
 	}
 
-	mauclient, err := mautrix.NewClient(ld.Homeserver, id.UserID(ld.Mxid), "")
+	mauclient, err := mautrix.NewClient(li.DiscoverInfo.Homeserver, li.DiscoverInfo.UserID, "")
 	if err != nil {
 		return "", err
 	}
 
 	now := time.Now()
-	if ld.DeviceID == "" {
-		ld.DeviceID = fmt.Sprintf("libmxclient-%d", now.Unix())
+	if li.DeviceID == "" {
+		li.DeviceID = id.DeviceID(fmt.Sprintf("libmxclient-%d", now.Unix()))
 	}
 
-	if ld.DeviceName == "" {
-		ld.DeviceName = fmt.Sprintf("libmxclient-%s", now.Format(time.RFC3339))
+	if li.DeviceName == "" {
+		li.DeviceName = fmt.Sprintf("libmxclient-%s", now.Format(time.RFC3339))
 	}
 
 	resp, err := mauclient.Login(context.Background(), &mautrix.ReqLogin{
 		Type: "m.login.password",
 		Identifier: mautrix.UserIdentifier{
 			Type: "m.id.user",
-			User: ld.Loginname,
+			User: li.DiscoverInfo.LoginName,
 		},
-		Password:                 ld.Password,
-		DeviceID:                 id.DeviceID(ld.DeviceID),
-		InitialDeviceDisplayName: ld.DeviceName,
+		Password:                 li.Password,
+		DeviceID:                 li.DeviceID,
+		InitialDeviceDisplayName: li.DeviceName,
 		StoreCredentials:         false,
 		StoreHomeserverURL:       false,
 		RefreshToken:             false,
@@ -73,26 +62,14 @@ func Login(data string) (string, error) {
 		return "", err
 	}
 
-	res := fmt.Sprintf("%s | %s | %s | %s\n", ld.Homeserver, ld.Loginname, id.UserID(ld.Mxid).Homeserver(), resp.AccessToken)
+	res := fmt.Sprintf("%s | %s | %s | %s\n", li.DiscoverInfo.Homeserver, li.DiscoverInfo.LoginName, li.DiscoverInfo.UserID.Homeserver(), resp.AccessToken)
 
-	if ld.MakeMasterKey {
-		masterkey := make([]byte, 32)
-		rand.Read(masterkey)
-		res = fmt.Sprintf("%smaster | | | %x\n", res, masterkey)
-	}
-
-	if ld.MakeRecoveryKey {
-		recoverykey := make([]byte, 32)
-		rand.Read(recoverykey)
-		res = fmt.Sprintf("%srecovery | | | %x\n", res, recoverykey)
-	}
-
-	if ld.MXPassFile != "" {
-		err := os.WriteFile(ld.MXPassFile, []byte(res), 0600)
+	if li.MXPassFile != "" {
+		err := os.WriteFile(li.MXPassFile, []byte(res), 0600)
 		if err != nil {
 			return "", fmt.Errorf("unable to write file: %w", err)
 		}
-		return "SUCCESS.", nil
+		return "", nil
 	}
 
 	return res, nil

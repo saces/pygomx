@@ -48,6 +48,12 @@ var apiCanceled = errors.New("canceled by api call")
 type conversion helpers with some basic validation
 */
 
+func c2UserID(userid *C.char) (id.UserID, error) {
+	userID := id.UserID(C.GoString(userid))
+	_, _, err := userID.ParseAndValidateRelaxed()
+	return userID, err
+}
+
 func c2RoomID(roomid *C.char) (id.RoomID, error) {
 	rid := C.GoString(roomid)
 	if rid == "" || rid[0] != '!' {
@@ -283,19 +289,31 @@ func apiv0_deinitialize() C.int {
 }
 
 //export apiv0_discover
-func apiv0_discover(mxid *C.char) *C.char {
-	result, err := mxapi.Discover(C.GoString(mxid))
+func apiv0_discover(userid *C.char) *C.char {
+	userID, err := c2UserID(userid)
+	if err != nil {
+		returnErr(err)
+	}
+	result, err := mxapi.Discover(userID)
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
-	return C.CString(result)
+	return returnJSON(result, err)
 }
 
 //export apiv0_login
-func apiv0_login(data *C.char) *C.char {
-	result, err := mxapi.Login(C.GoString(data))
+func apiv0_login(login_info *C.char) *C.char {
+	var loginInfo mxapi.LoginInfo
+	err := json.Unmarshal([]byte(C.GoString(login_info)), &loginInfo)
 	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
+		return returnErr(err)
+	}
+	result, err := mxapi.Login(&loginInfo)
+	if err != nil {
+		return returnErr(err)
+	}
+	if result == "" {
+		returnErr(nil)
 	}
 	return C.CString(result)
 }

@@ -1,6 +1,6 @@
 # Copyright (C) 2026 saces@c-base.org
 # SPDX-License-Identifier: AGPL-3.0-only
-import datetime
+from datetime import datetime
 import getpass
 import os
 import time
@@ -39,22 +39,22 @@ def catch_exception(func=None, *, handle):
 def smalsetup(mxid, mxpassfile):
     """Utility for creating smalbot mxpass files"""
 
-    create_mxpass = len(mxpassfile.strip()) > 0
+    now = int(time.time())
 
-    if create_mxpass:
+    if len(mxpassfile.strip()) > 0:
         if os.path.exists(mxpassfile):
             raise click.ClickException(f"file {mxpassfile} exists.")
 
-    result_dict = ApiV0.Discover(mxid)
+    discover_info = ApiV0.Discover(mxid)
 
-    result_dict["password"] = getpass.getpass(prompt="Password: ")
-    result_dict["make_master_key"] = True
-    result_dict["make_recovery_key"] = True
+    login_info = {
+        "discover_info": discover_info,
+        "deviceid": f"smalbot-{now}",
+        "devicename": f"smalbot-{datetime.fromtimestamp(now)}",
+        "mxpassfile": mxpassfile,
+        "password": getpass.getpass(prompt="Password: "),
+    }
 
-    now = int(time.time())
-    result_dict["deviceid"] = f"smalbot-{now}"
-    result_dict["devicename"] = f"smalbot-{datetime.datetime.fromtimestamp(now)}"
+    ApiV0.Login(login_info)
 
-    ApiV0.Login(result_dict, ".mxpass")
-
-    click.echo("login created. start your bot now.")
+    click.echo("login created. start your bot now or run e2eesetup.")

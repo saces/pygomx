@@ -50,8 +50,8 @@ ffibuilder.cdef(
     extern char* cliv0_generic_request(char* hs, char* access_token, char* method, char* path, char* data);
     extern int   apiv0_initialize();
     extern int   apiv0_deinitialize();
-    extern char* apiv0_discover(char* mxid);
-    extern char* apiv0_login(char* data);
+    extern char* apiv0_discover(char* user_id);
+    extern char* apiv0_login(char* login_info);
     extern char* apiv0_createclient(char* storage_path, char* hs, char* mxid, char* accessToken);
     extern char* apiv0_createclient_pass(char* mxpassfile, char* storage_path, char* hs, char* localpart, char* domain);   
     extern char* apiv0_set_on_event_handler(int cid, on_event_handler_ptr ptr, void* pobj);

@@ -4,31 +4,33 @@ package mxapi
 
 import (
 	"context"
-	"encoding/json"
 
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/id"
 )
 
-func Discover(mxid string) (string, error) {
+type DiscoverInfo struct {
+	Homeserver string    `json:"homeserver"`
+	UserID     id.UserID `json:"user_id"`
+	LoginName  string    `json:"login_name"`
+}
 
-	localpart, hs, err := id.UserID(mxid).ParseAndValidateRelaxed()
+// Discover tries to guess the homeserver from the given matrix id
+func Discover(userID id.UserID) (di *DiscoverInfo, err error) {
+	var tmp_di DiscoverInfo
+	tmp_di.LoginName, tmp_di.Homeserver, err = userID.ParseAndValidateRelaxed()
 	if err != nil {
-		return "", err
+		return
 	}
 
-	wk, err := mautrix.DiscoverClientAPI(context.Background(), hs)
+	wk, err := mautrix.DiscoverClientAPI(context.Background(), tmp_di.Homeserver)
 	if err != nil {
-		return "", err
+		return
 	}
 	if wk != nil {
-		hs = wk.Homeserver.BaseURL
+		tmp_di.Homeserver = wk.Homeserver.BaseURL
 	}
-
-	out, err := json.Marshal(map[string]string{"mxid": mxid, "homeserver": hs, "loginname": localpart})
-	if err != nil {
-		return "", err
-	}
-
-	return string(out), nil
+	tmp_di.UserID = userID
+	di = &tmp_di
+	return
 }
