@@ -1,1 +1,0 @@
-from .smalsetup import smalsetup
