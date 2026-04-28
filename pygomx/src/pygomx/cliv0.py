@@ -54,9 +54,9 @@ class CliV0:
     high level & helper functions
     """
 
-    def __init__(self, hs_url, token):
+    def __init__(self, hs_url, access_token):
         self.hs_url = hs_url
-        self.token = token
+        self.access_token = access_token
 
     @classmethod
     def from_mxpass(cls, mxpassfile, hs_url, localpart, domain):
@@ -75,13 +75,13 @@ class CliV0:
         return CheckApiResult(res)
 
     def Whoami(self):
-        res = CliV0Api.whoami(self.hs_url, self.token)
+        res = CliV0Api.whoami(self.hs_url, self.access_token)
         return CheckApiResult(res)
 
-    def Generic(self, method, path, data=None, omitt_token=False):
-        if omitt_token:
+    def Generic(self, method, path, data=None, omitt_access_token=False):
+        if omitt_access_token:
             token = ""
         else:
-            token = self.token
+            token = self.access_token
         res = CliV0Api.generic(self.hs_url, token, method, path, data)
         return CheckApiResult(res)
