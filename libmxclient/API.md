@@ -22,5 +22,11 @@ it's the callers task to keep passed callback pointers alive
 
 `v0` unstable, devolopment version
 
-all other version are stable, may get additions and security fixes, no other changes
+all other version are stable, may get new endpoints and security fixes, no other changes
 
+
+## naming scheme
+
+endpoints beginning with `cliv…`: stand alone helpers
+
+endpoints beginning with `apiv…`: the client api.
