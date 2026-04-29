@@ -1,16 +1,12 @@
 # Copyright (C) 2026 saces@c-base.org
 # SPDX-License-Identifier: AGPL-3.0-only
-from datetime import datetime
 import getpass
-import os
-import json
+from datetime import datetime
 from functools import partial, wraps
 
 import click
-from pygomx.errors import PygomxAPIError
-
-from pygomx.apiv0 import ApiV0
 from pygomx.cliv0 import CliV0
+from pygomx.errors import PygomxAPIError
 
 from .e2eebot import E2eeBot
 
@@ -55,11 +51,10 @@ def e2eesetup(mxpassfile):
         click.echo("Other devices:")
         other_devices_list = []
         for device in devices["devices"]:
-            # print(device)
             if device["device_id"] != whoami["device_id"]:
                 other_devices_list.append(device["device_id"])
                 # devices never logged in don't have a 'last_seen_ts'
-                last_seen = ""
+                last_seen = "never"
                 if device["last_seen_ts"]:
                     last_seen = datetime.fromtimestamp(device["last_seen_ts"] / 1000)
                 click.echo(
@@ -95,4 +90,4 @@ def e2eesetup(mxpassfile):
 
     e2eeBot.run(sync=False)
 
-    print("Huhu Bämm!")
+    click.echo("e2ee setup done. you may start your bot now.")
