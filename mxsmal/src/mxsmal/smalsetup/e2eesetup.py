@@ -58,8 +58,12 @@ def e2eesetup(mxpassfile):
             # print(device)
             if device["device_id"] != whoami["device_id"]:
                 other_devices_list.append(device["device_id"])
+                # devices never logged in don't have a 'last_seen_ts'
+                last_seen = ""
+                if device["last_seen_ts"]:
+                    last_seen = datetime.fromtimestamp(device["last_seen_ts"] / 1000)
                 click.echo(
-                    f"    {device['device_id']} ({device['display_name']}) - {datetime.fromtimestamp(device['last_seen_ts']/1000)} from {device['last_seen_ip']}"
+                    f"    {device['device_id']} ({device['display_name']}) - {last_seen} from {device['last_seen_ip']}"
                 )
         click.echo()
         if click.confirm("Do you want to log them out?"):
