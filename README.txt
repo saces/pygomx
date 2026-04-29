@@ -60,6 +60,10 @@ usage:
     this command creates a credentials file (.mxpass) in the current dir.
     autopickup by all tools & bots that requires credentials, no further configuration required
 
+  e2eesetup
+    this command configures crypto. (self signed device)
+    this works only then no other e2ee enabled devices are present, so this tool will ask to log them out.
+
   commands:
     mxdiscover --help
     mxpassitem --help
