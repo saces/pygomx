@@ -66,11 +66,8 @@ class _AsyncClient:
         CheckApiError(r)
 
     async def _sync(self):
-        loop = asyncio.new_event_loop()
-        threading.Thread(
-            target=loop.run_forever, name="Async Runner", daemon=True
-        ).start()
-        asyncio.run_coroutine_threadsafe(self._sync_inner(), loop).result()
+        thread = threading.Thread(target=asyncio.run, args=(self._sync_inner(),))
+        thread.start()
 
     def _stopsync(self):
         r = ApiV0Api.stopclient(self.client_id)
@@ -148,31 +145,22 @@ class _AsyncClient:
 
     def process_event(self, evt):
         if hasattr(self, "on_event") and callable(self.on_event):
-            loop = asyncio.new_event_loop()
-            threading.Thread(
-                target=loop.run_forever, name="Async Runner", daemon=True
-            ).start()
-            asyncio.run_coroutine_threadsafe(self.on_event(evt), loop).result()
+            thread = threading.Thread(target=asyncio.run, args=(self.on_event(evt),))
+            thread.start()
         else:
             logger.warn(f"got event but on_event not declared: {evt}")
 
     def process_message(self, msg):
         if hasattr(self, "on_message") and callable(self.on_message):
-            loop = asyncio.new_event_loop()
-            threading.Thread(
-                target=loop.run_forever, name="Async Runner", daemon=True
-            ).start()
-            asyncio.run_coroutine_threadsafe(self.on_message(msg), loop).result()
+            thread = threading.Thread(target=asyncio.run, args=(self.on_message(msg),))
+            thread.start()
         else:
             logger.warn(f"got message but on_message not declared: {msg}")
 
     def process_sys(self, ntf):
         if hasattr(self, "on_sys") and callable(self.on_sys):
-            loop = asyncio.new_event_loop()
-            threading.Thread(
-                target=loop.run_forever, name="Async Runner", daemon=True
-            ).start()
-            asyncio.run_coroutine_threadsafe(self.on_sys(ntf), loop).result()
+            thread = threading.Thread(target=asyncio.run, args=(self.on_sys(ntf),))
+            thread.start()
         else:
             logger.warn(f"got systen notification but on_sys not declared: {ntf}")
 
