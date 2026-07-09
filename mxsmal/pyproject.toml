@@ -19,7 +19,7 @@ dependencies = [
     "asyncio",
     "cffi>=2.0.0",
     "click",
-    "pygomx>=2026.4.19.6.41",
+    "pygomx>=2026.7.9.7.55",
     "dacite >= 1.9.2",
 ]
 
