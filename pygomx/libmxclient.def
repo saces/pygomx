@@ -33,6 +33,7 @@ apiv0_setoptions
 apiv0_startclient
 apiv0_stopclient
 apiv0_self_sign
+apiv0_add_direct_room
 cliv0_accountinfo
 cliv0_clearaccount
 cliv0_discoverhs

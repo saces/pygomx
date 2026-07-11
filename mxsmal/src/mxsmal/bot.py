@@ -16,7 +16,7 @@ class SMALBot(SMALApp):
     """ """
 
     def __init__(self, sigil, config=None):
-        super().__init__()
+        super().__init__(config)
         self._sigil = sigil
         self._config = config if config is not None else SMALConfig.create_new()
 

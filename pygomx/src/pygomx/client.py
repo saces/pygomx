@@ -18,9 +18,9 @@ class _AsyncClient:
     core binding
     """
 
-    def __init__(self):
+    def __init__(self, config=None):
         super().__init__()
-        self._createMXClient()
+        self._createMXClient(config)
         # create a c-handle for self and keep it alive
         self._ffi_selfhandle = ffi.new_handle(self)
 
@@ -48,7 +48,7 @@ class _AsyncClient:
         if result.startswith(b"ERR:"):
             raise PygomxAPIError(result)
 
-    def _createMXClient(self):
+    def _createMXClient(self, config):
         r = lib.apiv0_createclient_pass(b".mxpass", b".", b"*", b"*", b"*")
 
         result = ffi.string(r)
@@ -60,6 +60,12 @@ class _AsyncClient:
         self.client_id = result_dict["id"]
         self.UserID = result_dict["userid"]
         self.DeviceID = result_dict["deviceid"]
+
+        if config is not None:
+            result = ApiV0Api.setoptions(self.client_id, config)
+            if result.startswith("ERR:"):
+                raise PygomxAPIError(result)
+
 
     async def _sync_inner(self):
         r = ApiV0Api.startclient(self.client_id)
@@ -86,7 +92,7 @@ class _AsyncClient:
         return CheckApiResult(r)
 
     async def joinroom(self, roomid):
-        r = ApiV0Api.joinroom(self.client_id)
+        r = ApiV0Api.joinroom(self.client_id, roomid)
         return CheckApiResult(r)
 
     async def createroom(self, data_dict):
@@ -141,6 +147,10 @@ class _AsyncClient:
 
     async def getuserdm(self, userid):
         r = ApiV0Api.getuserdm(self.client_id, userid)
+        return CheckApiResult(r)
+
+    async def add_direct_room(self, userid, roomid):
+        r = ApiV0Api.add_direct_room(self.client_id, userid, roomid)
         return CheckApiResult(r)
 
     def process_event(self, evt):

@@ -23,12 +23,22 @@ import (
 	"maunium.net/go/mautrix/sqlstatestore"
 )
 
+type MXClientConfig struct {
+	Autojoin bool `json:"autojoin"`
+}
+
 type MXClient struct {
 	*mautrix.Client
 	OnEvent    func(string)
 	OnMessage  func(string)
 	OnSystem   func(string)
 	_directMap map[id.RoomID][]id.UserID
+	config     MXClientConfig
+}
+
+func (mxc *MXClient) SetConfig(cfg *MXClientConfig) error {
+	mxc.config.Autojoin = cfg.Autojoin
+	return nil
 }
 
 func (mxc *MXClient) _onAccountDataDM(ctx context.Context, evt *event.Event) { // event.DirectChatsEventContent
@@ -36,7 +46,7 @@ func (mxc *MXClient) _onAccountDataDM(ctx context.Context, evt *event.Event) { /
 	fmt.Printf("\nTODO: Got event account data dm: %#v\n", evt)
 }
 
-func (mxc *MXClient) AddDirectRoom(uid id.UserID, roomid id.RoomID) {
+func (mxc *MXClient) AddDirectRoom(uid id.UserID, roomid id.RoomID) error {
 	room, ok := mxc._directMap[roomid]
 	if ok {
 		if slices.Contains(room, uid) {
@@ -48,6 +58,7 @@ func (mxc *MXClient) AddDirectRoom(uid id.UserID, roomid id.RoomID) {
 	} else {
 		mxc._directMap[roomid] = []id.UserID{uid}
 	}
+	return mxc._storeDirectMap()
 }
 
 func (mxc *MXClient) IsDirectRoom(roomid id.RoomID) bool {
@@ -102,24 +113,35 @@ func (mxc *MXClient) GetUserDM(mxid string) []string {
 
 func (mxc *MXClient) _onEventMember(ctx context.Context, evt *event.Event) {
 	if evt.GetStateKey() == mxc.UserID.String() && evt.Content.AsMember().Membership == event.MembershipInvite {
-		if evt.Content.AsMember().IsDirect {
-			mxc.AddDirectRoom(evt.Sender, evt.RoomID)
-			err := mxc._storeDirectMap()
-			if err != nil {
-				log.Error().Err(err).Msg("failed to store direct chats account data")
+		if mxc.config.Autojoin {
+			if evt.Content.AsMember().IsDirect {
+				err := mxc.AddDirectRoom(evt.Sender, evt.RoomID)
+				if err != nil {
+					log.Error().Err(err).Msg("failed to store direct chats account data")
+				}
 			}
-		}
-		_, err := mxc.JoinRoomByID(ctx, evt.RoomID)
-		if err == nil {
-			log.Info().
-				Str("room_id", evt.RoomID.String()).
-				Str("inviter", evt.Sender.String()).
-				Msg("Joined room after invite")
+			_, err := mxc.JoinRoomByID(ctx, evt.RoomID)
+			if err == nil {
+				log.Info().
+					Str("room_id", evt.RoomID.String()).
+					Str("inviter", evt.Sender.String()).
+					Msg("Joined room after invite")
+			} else {
+				log.Error().Err(err).
+					Str("room_id", evt.RoomID.String()).
+					Str("inviter", evt.Sender.String()).
+					Msg("Failed to join room after invite")
+			}
 		} else {
-			log.Error().Err(err).
-				Str("room_id", evt.RoomID.String()).
-				Str("inviter", evt.Sender.String()).
-				Msg("Failed to join room after invite")
+			out, err := json.Marshal(evt)
+			if err != nil {
+				log.Error().Err(err).
+					Str("id", evt.ID.String()).
+					Str("joiner", evt.Sender.String()).
+					Msg("Marshalling error")
+				return
+			}
+			mxc.OnEvent(string(out))
 		}
 	} else if evt.Content.AsMember().Membership == event.MembershipJoin {
 		out, err := json.Marshal(evt)
@@ -206,8 +228,7 @@ func (mxc *MXClient) CreateDM(ctx context.Context, uid id.UserID) (resp *mautrix
 		return
 	}
 
-	mxc.AddDirectRoom(uid, resp.RoomID)
-	err = mxc._storeDirectMap()
+	err = mxc.AddDirectRoom(uid, resp.RoomID)
 	return
 }
 
@@ -345,7 +366,9 @@ func NewMXClient(homeserverURL string, userID id.UserID, accessToken string) (*M
 
 	client.Store = cryptoStore
 
-	mxclient := &MXClient{client, nil, nil, nil, make(map[id.RoomID][]id.UserID)}
+	cfg := MXClientConfig{Autojoin: true}
+
+	mxclient := &MXClient{client, nil, nil, nil, make(map[id.RoomID][]id.UserID), cfg}
 
 	syncer.ParseEventContent = true
 	syncer.OnEvent(client.StateStoreSyncHandler)

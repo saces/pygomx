@@ -754,8 +754,36 @@ func apiv0_getoptions(cid C.int) *C.char {
 }
 
 //export apiv0_setoptions
-func apiv0_setoptions(cid C.int, opts *C.char) C.int {
-	return 0
+func apiv0_setoptions(cid C.int, config *C.char) *C.char {
+	cli, err := getClient(int(cid))
+	if err != nil {
+		return returnErr(err)
+	}
+	var cfg mxclient.MXClientConfig
+	err = json.Unmarshal([]byte(C.GoString(config)), &cfg)
+	if err != nil {
+		return returnErr(err)
+	}
+	err = cli.SetConfig(&cfg)
+	return returnErr(err)
+}
+
+//export apiv0_add_direct_room
+func apiv0_add_direct_room(cid C.int, uid *C.char, roomid *C.char) *C.char {
+	userID, err := c2UserID(uid)
+	if err != nil {
+		return returnErr(err)
+	}
+	roomID, err := c2RoomID(roomid)
+	if err != nil {
+		return returnErr(err)
+	}
+	cli, err := getClient(int(cid))
+	if err != nil {
+		returnErr(err)
+	}
+	err = cli.AddDirectRoom(userID, roomID)
+	return returnErr(err)
 }
 
 func main() {}

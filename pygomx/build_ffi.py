@@ -61,7 +61,7 @@ ffibuilder.cdef(
     extern char* apiv0_stopclient(int cid);
     extern char* apiv0_sendmessage(int cid, char* data);
     extern char* apiv0_sendmessageevent(int cid, char* roomid, char* eventtype, char* contentjson);
-    extern char* apiv0_sendstateevent(int cid, char*  roomid, char* eventtype, char* statekey, char* contentjson);
+    extern char* apiv0_sendstateevent(int cid, char* roomid, char* eventtype, char* statekey, char* contentjson);
     extern char* apiv0_stateevent(int cid, char* roomid, char* eventtype, char* statekey);
     extern char* apiv0_getaccountdata(int cid, char* name);
     extern char* apiv0_setaccountdata(int cid, char* name, char* data);
@@ -80,7 +80,8 @@ ffibuilder.cdef(
     extern int   apiv0_removeclient(int cid);
     extern char* apiv0_listclients();
     extern char* apiv0_getoptions(int cid);
-    extern int   apiv0_setoptions(int cid, char* opts);
+    extern char* apiv0_setoptions(int cid, char* config);
+    extern char* apiv0_add_direct_room(int cid, char* uid, char* roomid);
     """
 )
 

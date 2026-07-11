@@ -145,6 +145,14 @@ class ApiV0Api:
     def self_sign(cid):
         return _stringresult(lib.apiv0_self_sign(cid))
 
+    @staticmethod
+    def setoptions(cid, config):
+        return _stringresult(lib.apiv0_setoptions(cid, _autodict(config)))
+
+    @staticmethod
+    def add_direct_room(cid, userid, roomid):
+        return _stringresult(lib.apiv0_add_direct_room(cid, _autostring(userid), _autostring(roomid)))
+
 
 class ApiV0:
     """ApiV0"""
