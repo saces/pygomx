@@ -112,50 +112,54 @@ func (mxc *MXClient) GetUserDM(mxid string) []string {
 }
 
 func (mxc *MXClient) _onEventMember(ctx context.Context, evt *event.Event) {
-	if evt.GetStateKey() == mxc.UserID.String() && evt.Content.AsMember().Membership == event.MembershipInvite {
-		if mxc.config.Autojoin {
-			if evt.Content.AsMember().IsDirect {
-				err := mxc.AddDirectRoom(evt.Sender, evt.RoomID)
-				if err != nil {
-					log.Error().Err(err).Msg("failed to store direct chats account data")
-				}
-			}
-			_, err := mxc.JoinRoomByID(ctx, evt.RoomID)
-			if err == nil {
-				log.Info().
-					Str("room_id", evt.RoomID.String()).
-					Str("inviter", evt.Sender.String()).
-					Msg("Joined room after invite")
-			} else {
-				log.Error().Err(err).
-					Str("room_id", evt.RoomID.String()).
-					Str("inviter", evt.Sender.String()).
-					Msg("Failed to join room after invite")
-			}
-		} else {
-			out, err := json.Marshal(evt)
+	if mxc.config.Autojoin && evt.GetStateKey() == mxc.UserID.String() && evt.Content.AsMember().Membership == event.MembershipInvite {
+		if evt.Content.AsMember().IsDirect {
+			err := mxc.AddDirectRoom(evt.Sender, evt.RoomID)
 			if err != nil {
-				log.Error().Err(err).
-					Str("id", evt.ID.String()).
-					Str("joiner", evt.Sender.String()).
-					Msg("Marshalling error")
-				return
+				log.Error().Err(err).Msg("failed to store direct chats account data")
 			}
-			mxc.OnEvent(string(out))
 		}
-	} else if evt.Content.AsMember().Membership == event.MembershipJoin {
-		out, err := json.Marshal(evt)
-		if err != nil {
+		_, err := mxc.JoinRoomByID(ctx, evt.RoomID)
+		if err == nil {
+			log.Info().
+				Str("room_id", evt.RoomID.String()).
+				Str("inviter", evt.Sender.String()).
+				Msg("Joined room after invite")
+		} else {
 			log.Error().Err(err).
-				Str("id", evt.ID.String()).
-				Str("joiner", evt.Sender.String()).
-				Msg("Marshalling error")
-			return
+				Str("room_id", evt.RoomID.String()).
+				Str("inviter", evt.Sender.String()).
+				Msg("Failed to join room after invite")
 		}
-		mxc.OnEvent(string(out))
-	} else {
-		fmt.Printf("\nGot member event: %s\n%#v\n", evt.GetStateKey(), evt)
+		return
 	}
+
+	var is_direct bool
+	if evt.Content.AsMember().Membership == event.MembershipInvite {
+		is_direct = evt.Content.AsMember().IsDirect
+	} else {
+		is_direct = mxc.IsDirectRoom(evt.RoomID)
+	}
+
+	out, err := json.Marshal(map[string]any{"sender": evt.Sender.String(),
+		"state_key":        evt.StateKey,
+		"type":             evt.Type.String(),
+		"server_timestamp": evt.Timestamp,
+		"id":               evt.ID.String(),
+		"room_id":          evt.RoomID.String(),
+		"is_direct":        is_direct,
+		"content":          evt.Content.Raw,
+		"redacts":          evt.Redacts,
+		"unsigned":         evt.Unsigned})
+
+	if err != nil {
+		log.Error().Err(err).
+			Str("id", evt.ID.String()).
+			Str("joiner", evt.Sender.String()).
+			Msg("Marshalling error")
+		return
+	}
+	mxc.OnEvent(string(out))
 }
 
 func (mxc *MXClient) _onMessage(ctx context.Context, evt *event.Event) {
