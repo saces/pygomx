@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=80", "cffi>=2.0.0", "calver"]
+requires = ["setuptools>=80", "cffi>=2.1.1", "calver"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -11,7 +11,7 @@ license = "AGPL-3.0-only"
 readme = "README.txt"
 keywords = ["matrix", "2.0", "bot", "client", "library"]
 
-dependencies = ["asyncio", "cffi>=2.0.0"]
+dependencies = ["cffi>=2.1.1"]
 
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
