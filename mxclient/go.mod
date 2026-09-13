@@ -1,23 +1,18 @@
-module mxclientlib
+module mxclient
 
 go 1.26.7
 
-require (
-	maunium.net/go/mautrix v0.30.0
-	mxclient v0.0.0-00010101000000-000000000000
-)
-
-replace mxclient => ../mxclient
+require maunium.net/go/mautrix v0.30.0
 
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
-	github.com/mattn/go-colorable v0.1.15 // indirect
-	github.com/mattn/go-isatty v0.0.22 // indirect
-	github.com/mattn/go-sqlite3 v1.14.52 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/mattn/go-sqlite3 v1.14.52
 	github.com/petermattis/goid v0.0.0-20260816044145-ed329add6b1b // indirect
 	github.com/rs/zerolog v1.35.1 // indirect
 	github.com/tidwall/gjson v1.19.0 // indirect
-	github.com/tidwall/match v1.2.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
 	go.mau.fi/util v0.10.0 // indirect

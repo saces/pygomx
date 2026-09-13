@@ -7,9 +7,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"mxclientlib/mxapi"
-	"mxclientlib/mxclient"
-	"mxclientlib/mxutils"
+	"mxclient/mxapi"
+	"mxclient/mxclient"
+	"mxclient/mxutils"
 	"unsafe"
 
 	"maunium.net/go/mautrix"

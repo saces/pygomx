@@ -1,6 +1,7 @@
 monorepos to have the right versions together
 
-libmxclient - golang matrix client library
+mxclient - golang matrix client library
+libmxclient - C-API for mxclient
 pygomx - python binding package
 smal - python matrix lib
 

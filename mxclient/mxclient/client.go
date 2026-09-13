@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"mxclientlib/determinant/mxpassfile"
+	"mxclient/determinant/mxpassfile"
 	"slices"
 
 	_ "github.com/mattn/go-sqlite3"

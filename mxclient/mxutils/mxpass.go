@@ -4,7 +4,7 @@ package mxutils
 
 import (
 	"errors"
-	"mxclientlib/determinant/mxpassfile"
+	"mxclient/determinant/mxpassfile"
 )
 
 func GetMXPassItem(mxpassfile_path string, url string, localpart string, domain string) (*mxpassfile.Entry, error) {
