@@ -25,6 +25,7 @@ class _AsyncClient:
         self._ffi_selfhandle = ffi.new_handle(self)
         self._dispatch_loop = None
         self._dispatch_thread = None
+        self._sync_thread = None
 
         r = lib.apiv0_set_on_event_handler(
             self.client_id, on_event_callback, self._ffi_selfhandle
@@ -63,17 +64,36 @@ class _AsyncClient:
         self.UserID = result_dict["userid"]
         self.DeviceID = result_dict["deviceid"]
 
-    async def _sync_inner(self):
+    def _sync_inner(self):
         r = ApiV0Api.startclient(self.client_id)
         CheckApiError(r)
 
-    async def _sync(self):
-        thread = threading.Thread(target=asyncio.run, args=(self._sync_inner(),))
-        thread.start()
+    async def start(self):
+        self._start_dispatch_loop()
+        self._sync_thread = threading.Thread(
+            target=self._sync_inner, name="pygomx-sync"
+        )
+        self._sync_thread.start()
 
-    def _stopsync(self):
+    def _stop_dispatch_loop(self):
+        loop = self._dispatch_loop
+        thread = self._dispatch_thread
+        if loop is not None:
+            loop.call_soon_threadsafe(loop.stop)
+        if thread is not None:
+            thread.join(timeout=5)
+        if loop is not None:
+            loop.close()
+        self._dispatch_loop = None
+        self._dispatch_thread = None
+
+    def stop(self):
         r = ApiV0Api.stopclient(self.client_id)
         CheckApiError(r)
+        self._stop_dispatch_loop()
+        if self._sync_thread is not None:
+            self._sync_thread.join(timeout=5)
+            self._sync_thread = None
 
     async def _call(self, func, *args):
         return await asyncio.to_thread(func, *args)
