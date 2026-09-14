@@ -148,21 +148,21 @@ class _AsyncClient:
             thread = threading.Thread(target=asyncio.run, args=(self.on_event(evt),))
             thread.start()
         else:
-            logger.warn(f"got event but on_event not declared: {evt}")
+            logger.warning(f"got event but on_event not declared: {evt}")
 
     def process_message(self, msg):
         if hasattr(self, "on_message") and callable(self.on_message):
             thread = threading.Thread(target=asyncio.run, args=(self.on_message(msg),))
             thread.start()
         else:
-            logger.warn(f"got message but on_message not declared: {msg}")
+            logger.warning(f"got message but on_message not declared: {msg}")
 
     def process_sys(self, ntf):
         if hasattr(self, "on_sys") and callable(self.on_sys):
             thread = threading.Thread(target=asyncio.run, args=(self.on_sys(ntf),))
             thread.start()
         else:
-            logger.warn(f"got systen notification but on_sys not declared: {ntf}")
+            logger.warning(f"got systen notification but on_sys not declared: {ntf}")
 
 
 @ffi.callback("void(char*, void*)")
