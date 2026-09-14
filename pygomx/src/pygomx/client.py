@@ -73,74 +73,92 @@ class _AsyncClient:
         r = ApiV0Api.stopclient(self.client_id)
         CheckApiError(r)
 
+    async def _call(self, func, *args):
+        return await asyncio.to_thread(func, *args)
+
     async def _sendmessage(self, data_dict):
-        r = ApiV0Api.sendmessage(self.client_id, data_dict)
+        r = await self._call(ApiV0Api.sendmessage, self.client_id, data_dict)
         return CheckApiResult(r)
 
     async def leaveroom(self, roomid):
-        r = ApiV0Api.leaveroom(self.client_id, roomid)
+        r = await self._call(ApiV0Api.leaveroom, self.client_id, roomid)
         CheckApiError(r)
 
     async def joinedrooms(self):
-        r = ApiV0Api.joinedrooms(self.client_id)
+        r = await self._call(ApiV0Api.joinedrooms, self.client_id)
         return CheckApiResult(r)
 
     async def joinroom(self, roomid):
-        r = ApiV0Api.joinroom(self.client_id)
+        r = await self._call(ApiV0Api.joinroom, self.client_id, roomid)
         return CheckApiResult(r)
 
     async def createroom(self, data_dict):
-        r = ApiV0Api.createroom(self.client_id, data_dict)
+        r = await self._call(ApiV0Api.createroom, self.client_id, data_dict)
         return CheckApiResult(r)
 
     async def generic(self, method, path, data=None):
-        r = ApiV0Api.generic(self.client_id, method, path, data)
+        r = await self._call(ApiV0Api.generic, self.client_id, method, path, data)
         return CheckApiErrorOnly(r)
 
     async def room_send_message(self, roomid, eventtype, content):
-        r = ApiV0Api.room_send_message(self.client_id, roomid, eventtype, content)
+        r = await self._call(
+            ApiV0Api.room_send_message, self.client_id, roomid, eventtype, content
+        )
         return CheckApiResult(r)
 
     async def room_send_state(self, roomid, eventtype, statekey, content):
-        r = ApiV0Api.room_send_state(
-            self.client_id, roomid, eventtype, statekey, content
+        r = await self._call(
+            ApiV0Api.room_send_state,
+            self.client_id,
+            roomid,
+            eventtype,
+            statekey,
+            content,
         )
         return CheckApiResult(r)
 
     async def room_get_state(self, roomid, eventtype, statekey):
-        r = ApiV0Api.room_get_state(self.client_id, roomid, eventtype, statekey)
+        r = await self._call(
+            ApiV0Api.room_get_state, self.client_id, roomid, eventtype, statekey
+        )
         return CheckApiResult(r)
 
     async def account_get_data(self, name):
-        r = ApiV0Api.account_getdata(self.client_id, name)
+        r = await self._call(ApiV0Api.account_getdata, self.client_id, name)
         return CheckApiResult(r)
 
     async def account_set_data(self, name, data):
-        r = ApiV0Api.account_setdata(self.client_id, name, data)
+        r = await self._call(ApiV0Api.account_setdata, self.client_id, name, data)
         return CheckApiError(r)
 
     async def room_get_accountdata(self, roomid, name):
-        r = ApiV0Api.room_get_accountdata(self.client_id, roomid, name)
+        r = await self._call(
+            ApiV0Api.room_get_accountdata, self.client_id, roomid, name
+        )
         return CheckApiResult(r)
 
     async def room_set_accountdata(self, roomid, name, data):
-        r = ApiV0Api.room_set_accountdata(self.client_id, roomid, name, data)
+        r = await self._call(
+            ApiV0Api.room_set_accountdata, self.client_id, roomid, name, data
+        )
         return CheckApiError(r)
 
     async def redact_event(self, roomid, eventid, reason):
-        r = ApiV0Api.redact_event(self.client_id, roomid, eventid, reason)
+        r = await self._call(
+            ApiV0Api.redact_event, self.client_id, roomid, eventid, reason
+        )
         return CheckApiResult(r)
 
     async def getevent(self, roomid, eventid):
-        r = ApiV0Api.getevent(self.client_id, roomid, eventid)
+        r = await self._call(ApiV0Api.getevent, self.client_id, roomid, eventid)
         return CheckApiResult(r)
 
     async def createdm(self, uid):
-        r = ApiV0Api.createdm(self.client_id, uid)
+        r = await self._call(ApiV0Api.createdm, self.client_id, uid)
         return CheckApiResult(r)
 
     async def getuserdm(self, userid):
-        r = ApiV0Api.getuserdm(self.client_id, userid)
+        r = await self._call(ApiV0Api.getuserdm, self.client_id, userid)
         return CheckApiResult(r)
 
     def process_event(self, evt):
