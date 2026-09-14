@@ -23,6 +23,8 @@ class _AsyncClient:
         self._createMXClient()
         # create a c-handle for self and keep it alive
         self._ffi_selfhandle = ffi.new_handle(self)
+        self._dispatch_loop = None
+        self._dispatch_thread = None
 
         r = lib.apiv0_set_on_event_handler(
             self.client_id, on_event_callback, self._ffi_selfhandle
@@ -161,24 +163,59 @@ class _AsyncClient:
         r = await self._call(ApiV0Api.getuserdm, self.client_id, userid)
         return CheckApiResult(r)
 
+    def _start_dispatch_loop(self):
+        self._dispatch_loop = asyncio.new_event_loop()
+        self._dispatch_thread = threading.Thread(
+            target=self._dispatch_loop.run_forever,
+            name="pygomx-dispatch",
+            daemon=True,
+        )
+        self._dispatch_thread.start()
+
+    def _log_dispatch_error(self, fut):
+        if fut.cancelled():
+            return
+        exc = fut.exception()
+        if exc is not None:
+            logger.error("error in async callback handler", exc_info=exc)
+
+    def _run_sync_handler(self, handler, payload):
+        try:
+            handler(payload)
+        except Exception:
+            logger.exception("error in sync callback handler")
+
+    def _dispatch(self, handler, payload):
+        if self._dispatch_loop is None:
+            self._start_dispatch_loop()
+        if asyncio.iscoroutinefunction(handler):
+            fut = asyncio.run_coroutine_threadsafe(
+                handler(payload), self._dispatch_loop
+            )
+            fut.add_done_callback(self._log_dispatch_error)
+        else:
+            self._dispatch_loop.call_soon_threadsafe(
+                self._run_sync_handler, handler, payload
+            )
+
     def process_event(self, evt):
-        if hasattr(self, "on_event") and callable(self.on_event):
-            thread = threading.Thread(target=asyncio.run, args=(self.on_event(evt),))
-            thread.start()
+        handler = getattr(self, "on_event", None)
+        if callable(handler):
+            self._dispatch(handler, evt)
         else:
             logger.warning(f"got event but on_event not declared: {evt}")
 
     def process_message(self, msg):
-        if hasattr(self, "on_message") and callable(self.on_message):
-            thread = threading.Thread(target=asyncio.run, args=(self.on_message(msg),))
-            thread.start()
+        handler = getattr(self, "on_message", None)
+        if callable(handler):
+            self._dispatch(handler, msg)
         else:
             logger.warning(f"got message but on_message not declared: {msg}")
 
     def process_sys(self, ntf):
-        if hasattr(self, "on_sys") and callable(self.on_sys):
-            thread = threading.Thread(target=asyncio.run, args=(self.on_sys(ntf),))
-            thread.start()
+        handler = getattr(self, "on_sys", None)
+        if callable(handler):
+            self._dispatch(handler, ntf)
         else:
             logger.warning(f"got systen notification but on_sys not declared: {ntf}")
 
