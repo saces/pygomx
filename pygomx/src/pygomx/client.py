@@ -26,6 +26,8 @@ class _AsyncClient:
         self._dispatch_loop = None
         self._dispatch_thread = None
         self._sync_thread = None
+        self._lock = threading.Lock()
+        self._dispatch_closed = False
 
         r = lib.apiv0_set_on_event_handler(
             self.client_id, on_event_callback, self._ffi_selfhandle
@@ -69,23 +71,39 @@ class _AsyncClient:
         CheckApiError(r)
 
     async def start(self):
-        self._start_dispatch_loop()
+        self._get_dispatch_loop()
         self._sync_thread = threading.Thread(
             target=self._sync_inner, name="pygomx-sync"
         )
         self._sync_thread.start()
 
+    def _get_dispatch_loop(self):
+        with self._lock:
+            if self._dispatch_closed:
+                return None
+            if self._dispatch_loop is None:
+                self._dispatch_loop = asyncio.new_event_loop()
+                self._dispatch_thread = threading.Thread(
+                    target=self._dispatch_loop.run_forever,
+                    name="pygomx-dispatch",
+                    daemon=True,
+                )
+                self._dispatch_thread.start()
+            return self._dispatch_loop
+
     def _stop_dispatch_loop(self):
-        loop = self._dispatch_loop
-        thread = self._dispatch_thread
-        if loop is not None:
-            loop.call_soon_threadsafe(loop.stop)
-        if thread is not None:
-            thread.join(timeout=5)
-        if loop is not None:
-            loop.close()
-        self._dispatch_loop = None
-        self._dispatch_thread = None
+        with self._lock:
+            loop = self._dispatch_loop
+            thread = self._dispatch_thread
+            self._dispatch_loop = None
+            self._dispatch_thread = None
+            self._dispatch_closed = True
+            if loop is not None:
+                loop.call_soon_threadsafe(loop.stop)
+            if thread is not None:
+                thread.join(timeout=5)
+            if loop is not None:
+                loop.close()
 
     def stop(self):
         r = ApiV0Api.stopclient(self.client_id)
@@ -183,15 +201,6 @@ class _AsyncClient:
         r = await self._call(ApiV0Api.getuserdm, self.client_id, userid)
         return CheckApiResult(r)
 
-    def _start_dispatch_loop(self):
-        self._dispatch_loop = asyncio.new_event_loop()
-        self._dispatch_thread = threading.Thread(
-            target=self._dispatch_loop.run_forever,
-            name="pygomx-dispatch",
-            daemon=True,
-        )
-        self._dispatch_thread.start()
-
     def _log_dispatch_error(self, fut):
         if fut.cancelled():
             return
@@ -206,17 +215,15 @@ class _AsyncClient:
             logger.exception("error in sync callback handler")
 
     def _dispatch(self, handler, payload):
-        if self._dispatch_loop is None:
-            self._start_dispatch_loop()
+        loop = self._get_dispatch_loop()
+        if loop is None:
+            logger.warning("dispatch loop stopped, dropping callback")
+            return
         if asyncio.iscoroutinefunction(handler):
-            fut = asyncio.run_coroutine_threadsafe(
-                handler(payload), self._dispatch_loop
-            )
+            fut = asyncio.run_coroutine_threadsafe(handler(payload), loop)
             fut.add_done_callback(self._log_dispatch_error)
         else:
-            self._dispatch_loop.call_soon_threadsafe(
-                self._run_sync_handler, handler, payload
-            )
+            loop.call_soon_threadsafe(self._run_sync_handler, handler, payload)
 
     def process_event(self, evt):
         handler = getattr(self, "on_event", None)
