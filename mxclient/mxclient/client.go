@@ -130,6 +130,9 @@ func (mxc *MXClient) _onEventMember(ctx context.Context, evt *event.Event) {
 				Msg("Marshalling error")
 			return
 		}
+		if mxc.OnEvent == nil {
+			log.Fatal().Str("id", evt.ID.String()).Str("room", evt.RoomID.String()).Msg("on_event callback not set")
+		}
 		mxc.OnEvent(string(out))
 	} else {
 		fmt.Printf("\nGot member event: %s\n%#v\n", evt.GetStateKey(), evt)
@@ -153,6 +156,9 @@ func (mxc *MXClient) _onMessage(ctx context.Context, evt *event.Event) {
 			Str("inviter", evt.Sender.String()).
 			Msg("Marshalling error")
 		return
+	}
+	if mxc.OnMessage == nil {
+		log.Fatal().Str("id", evt.ID.String()).Str("room", evt.RoomID.String()).Msg("on_message callback not set")
 	}
 	mxc.OnMessage(string(out))
 
