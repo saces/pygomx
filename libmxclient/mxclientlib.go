@@ -10,6 +10,7 @@ import (
 	"mxclient/mxapi"
 	"mxclient/mxclient"
 	"mxclient/mxutils"
+	"sync/atomic"
 	"unsafe"
 
 	"maunium.net/go/mautrix"
@@ -109,7 +110,18 @@ type CBClient struct {
 	on_message_handler_pobj unsafe.Pointer
 	on_sys_handler          C.on_sys_handler_ptr
 	on_sys_handler_pobj     unsafe.Pointer
-	syncCancelFunc          context.CancelCauseFunc
+	syncCancel              atomic.Pointer[cancelFunc]
+}
+
+type cancelFunc struct {
+	cancel context.CancelCauseFunc
+}
+
+func (cli *CBClient) stopSync() {
+	cli.StopSync()
+	if p := cli.syncCancel.Load(); p != nil {
+		p.cancel(apiCanceled)
+	}
 }
 
 func (cli *CBClient) OnEvent(s string) {
@@ -151,7 +163,7 @@ func NewCBClient(homeserverURL string, userID id.UserID, accessToken string) (*C
 	if err != nil {
 		return nil, err
 	}
-	return &CBClient{client, nil, nil, nil, nil, nil, nil, nil}, nil
+	return &CBClient{MXClient: client}, nil
 }
 
 /*
@@ -292,7 +304,7 @@ func apiv0_deinitialize() C.int {
 func apiv0_discover(userid *C.char) *C.char {
 	userID, err := c2UserID(userid)
 	if err != nil {
-		returnErr(err)
+		return returnErr(err)
 	}
 	result, err := mxapi.Discover(userID)
 	if err != nil {
@@ -313,7 +325,7 @@ func apiv0_login(login_info *C.char) *C.char {
 		return returnErr(err)
 	}
 	if result == "" {
-		returnErr(nil)
+		return returnErr(nil)
 	}
 	return C.CString(result)
 }
@@ -324,7 +336,7 @@ func apiv0_createclient(storage_path *C.char, url *C.char, userID *C.char, acces
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
-	client := &CBClient{mxclient, nil, nil, nil, nil, nil, nil, nil}
+	client := &CBClient{MXClient: mxclient}
 	cclients = append(cclients, client)
 	return C.CString(fmt.Sprintf("{ \"id:\"SUCESS. ID=%d\n", len(cclients)))
 }
@@ -335,7 +347,7 @@ func apiv0_createclient_pass(mxpassfile_path *C.char, storage_path *C.char, url 
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
-	client := &CBClient{mxclient, nil, nil, nil, nil, nil, nil, nil}
+	client := &CBClient{MXClient: mxclient}
 	mxclient.OnEvent = client.OnEvent
 	mxclient.OnMessage = client.OnMessage
 	mxclient.OnSystem = client.OnSystem
@@ -389,7 +401,7 @@ func apiv0_startclient(cid C.int) *C.char {
 	}
 
 	ctx, cancel := context.WithCancelCause(context.Background())
-	cli.syncCancelFunc = cancel
+	cli.syncCancel.Store(&cancelFunc{cancel: cancel})
 
 	err = cli.SyncWithContext(ctx)
 	if err != nil {
@@ -412,8 +424,7 @@ func apiv0_stopclient(cid C.int) *C.char {
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
-	cli.StopSync()
-	cli.syncCancelFunc(apiCanceled)
+	cli.stopSync()
 
 	return C.CString("SUCCESS.")
 }
