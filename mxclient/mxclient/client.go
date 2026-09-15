@@ -230,7 +230,11 @@ func (mxc *MXClient) SendRoomMessage(ctx context.Context, data string) (*mautrix
 		return nil, err
 	}
 
-	resp, err := mxc.SendMessageEvent(ctx, smd.RoomId, event.EventMessage, smd.Content)
+	msgType := smd.Type
+	if msgType == (event.Type{}) {
+		msgType = event.EventMessage
+	}
+	resp, err := mxc.SendMessageEvent(ctx, smd.RoomId, msgType, smd.Content)
 	if err != nil {
 		return nil, err
 	}
