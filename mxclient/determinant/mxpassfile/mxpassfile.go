@@ -4,6 +4,8 @@ package mxpassfile
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -25,7 +27,17 @@ type Passfile struct {
 }
 
 // ReadPassfile reads the file at path and parses it into a Passfile.
-func readPassfile(path string) (*Passfile, error) {
+func ReadPassfile(path string) (*Passfile, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	permissions := fileInfo.Mode().Perm()
+
+	if permissions != 0o400 && permissions != 0o600 {
+		return nil, errors.New("Too wide permissions, ignore file")
+	}
+
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -36,13 +48,14 @@ func readPassfile(path string) (*Passfile, error) {
 }
 
 // ParsePassfile reads r and parses it into a Passfile.
+// ignores invalid lines
 func ParsePassfile(r io.Reader) (*Passfile, error) {
 	passfile := &Passfile{}
 
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
-		entry := parseLine(scanner.Text())
-		if entry != nil {
+		entry, err := parseLine(scanner.Text())
+		if err == nil && entry != nil {
 			passfile.Entries = append(passfile.Entries, entry)
 		}
 	}
@@ -50,9 +63,44 @@ func ParsePassfile(r io.Reader) (*Passfile, error) {
 	return passfile, scanner.Err()
 }
 
-// parseLine parses a line into an *Entry. It returns nil on comment lines or any other unparsable
-// line.
-func parseLine(line string) *Entry {
+// ParsePassfile reads r and parses it into a Passfile.
+// returns an empty Passfile on errors
+func ParsePassfileValidate(r io.Reader) (*Passfile, error) {
+	passfile := &Passfile{}
+
+	line := 0
+
+	var parseErrs error
+
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		line++
+		entry, err := parseLine(scanner.Text())
+		if err != nil {
+			if parseErrs == nil {
+				parseErrs = fmt.Errorf("invalid line %d", line)
+			} else {
+				parseErrs = errors.Join(parseErrs, fmt.Errorf("invalid line %d", line))
+			}
+		} else if entry != nil {
+			passfile.Entries = append(passfile.Entries, entry)
+		}
+	}
+	parseErrs = errors.Join(parseErrs, scanner.Err())
+	if parseErrs != nil {
+		return &Passfile{}, parseErrs
+	}
+	return passfile, nil
+}
+
+var ErrorInvalidMXPassLine = errors.New("invalid MXPassfile line")
+
+// parseLine parses a line into an *Entry. It returns nil on empty or comment lines or an error on unparsable lines.
+func parseLine(line string) (*Entry, error) {
+	if line == "" {
+		return nil, nil
+	}
+
 	const (
 		tmpBackslash = "\r"
 		tmpPipe      = "\n"
@@ -61,7 +109,7 @@ func parseLine(line string) *Entry {
 	line = strings.TrimSpace(line)
 
 	if strings.HasPrefix(line, "#") {
-		return nil
+		return nil, nil
 	}
 
 	line = strings.ReplaceAll(line, `\\`, tmpBackslash)
@@ -69,7 +117,7 @@ func parseLine(line string) *Entry {
 
 	parts := strings.Split(line, "|")
 	if len(parts) != 4 {
-		return nil
+		return nil, ErrorInvalidMXPassLine
 	}
 
 	// Unescape escaped colons and backslashes
@@ -84,11 +132,11 @@ func parseLine(line string) *Entry {
 		Localpart:  parts[1],
 		Domain:     parts[2],
 		Token:      parts[3],
-	}
+	}, nil
 }
 
 func superCMP(fileitem, filteritem string) bool {
-	if filteritem == "*" {
+	if fileitem == "*" || filteritem == "*" {
 		return true
 	}
 	return fileitem == filteritem
@@ -96,6 +144,12 @@ func superCMP(fileitem, filteritem string) bool {
 
 // FindPassword finds the password for the provided synapsehost, localpart, and domain. An empty
 // string will be returned if no match is found.
+// search rules:
+//
+//	search term    matches    file value
+//	   value                    value, *
+//	     *                      value, *, ""
+//	     ""                     *, ""
 func (pf *Passfile) FindPassword(matrixhost, localpart, domain string) string {
 	for _, e := range pf.Entries {
 		if superCMP(e.Matrixhost, matrixhost) &&
