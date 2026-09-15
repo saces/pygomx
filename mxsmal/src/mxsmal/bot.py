@@ -21,58 +21,48 @@ class SMALBot(SMALApp):
         self._config = config if config is not None else SMALConfig.create_new()
 
     async def sendmessage(self, roomid, text):
-        data = {}
-        data["roomid"] = roomid
-        data["content"] = {}
-        data["content"]["body"] = text
-        data["content"]["msgtype"] = "m.text"
-
-        return await self._sendmessage(data)
+        content = {
+            "body": text,
+            "msgtype": "m.text"
+        }
+        return await self.room_send_message(roomid, 'm.room.message', content)
 
     async def sendmessagereply(self, roomid, msgid, mxid, text):
-        data = {}
-        data["roomid"] = roomid
-        data["content"] = {}
-        data["content"]["body"] = text
-        data["content"]["msgtype"] = "m.text"
-        data["content"]["m.mentions"] = {}
-        data["content"]["m.mentions"]["user_ids"] = [
-            mxid,
-        ]
-        data["content"]["m.relates_to"] = {"m.in_reply_to": {"event_id": msgid}}
-
-        return await self._sendmessage(data)
+        content = {
+            "body":  text,
+            "msgtype": "m.text",
+            "m.mentions": {
+                "user_ids":
+                    - mxid
+            },
+            "m.relates_to":  {"m.in_reply_to": {"event_id": msgid}}
+        }
+        return await self.room_send_message(roomid, 'm.room.message', content)
 
     async def sendmessagestartthread(self, roomid, msgid, mxid, text):
-        data = {}
-        data["roomid"] = roomid
-        data["content"] = {}
-        data["content"]["body"] = text
-        data["content"]["msgtype"] = "m.text"
-        data["content"]["m.mentions"] = {}
-        data["content"]["m.mentions"]["user_ids"] = [
-            mxid,
-        ]
-        data["content"]["m.relates_to"] = {"rel_type": "m.thread", "event_id": msgid}
-        return await self._sendmessage(data)
+        content = {
+            "body": text,
+            "msgtype":  "m.text",
+            "m.mentions": {
+                "user_ids":
+                  - mxid
+            },
+            "m.relates_to":  {"rel_type": "m.thread", "event_id": msgid}
+        }
+        return await self.room_send_message(roomid, 'm.room.message', content)
 
     async def sendnoticereply(self, roomid, msgid, mxid, text):
-        data = {}
-        data["roomid"] = roomid
-        data["content"] = {}
-        data["content"]["body"] = text
-        data["content"]["msgtype"] = "m.notice"
-        data["content"]["m.relates_to"] = {}
-        data["content"]["m.relates_to"]["m.in_reply_to"] = {}
-        data["content"]["m.relates_to"]["m.in_reply_to"]["event_id"] = msgid
-
-        return await self._sendmessage(data)
+        content = {
+            "body": text,
+            "msgtype": "m.notice",
+            "m.relates_to": {
+                "m.in_reply_to": {
+                    "event_id":  msgid}}}
+        return await self.room_send_message(roomid, 'm.room.message', content)
 
     async def sendnotice(self, roomid, text):
-        data = {}
-        data["roomid"] = roomid
-        data["content"] = {}
-        data["content"]["body"] = text
-        data["content"]["msgtype"] = "m.notice"
-
-        return await self._sendmessage(data)
+        content = {
+            "body": text,
+            "msgtype": "m.notice"
+        }
+        return await self.room_send_message(roomid, 'm.room.message', content)

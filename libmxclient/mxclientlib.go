@@ -429,24 +429,6 @@ func apiv0_stopclient(cid C.int) *C.char {
 	return C.CString("SUCCESS.")
 }
 
-//export apiv0_sendmessage
-func apiv0_sendmessage(cid C.int, data *C.char) *C.char {
-	cli, err := getClient(int(cid))
-	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
-	}
-	result, err := cli.SendRoomMessage(context.Background(), C.GoString(data))
-	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
-	}
-	out, err := json.Marshal(result)
-	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
-	}
-	s := string(out)
-	return C.CString(s)
-}
-
 //export apiv0_sendmessageevent
 func apiv0_sendmessageevent(cid C.int, roomid *C.char, eventtype *C.char, contentjson *C.char) *C.char {
 	roomID, err := c2RoomID(roomid)

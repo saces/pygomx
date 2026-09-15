@@ -16,7 +16,6 @@ apiv0_leaveroom
 apiv0_listclients
 apiv0_login
 apiv0_removeclient
-apiv0_sendmessage
 apiv0_sendmessageevent
 apiv0_sendstateevent
 apiv0_stateevent

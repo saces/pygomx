@@ -59,7 +59,6 @@ ffibuilder.cdef(
     extern char* apiv0_set_on_sys_handler(int cid, on_sys_handler_ptr ptr, void* pobj);
     extern char* apiv0_startclient(int cid);
     extern char* apiv0_stopclient(int cid);
-    extern char* apiv0_sendmessage(int cid, char* data);
     extern char* apiv0_sendmessageevent(int cid, char* roomid, char* eventtype, char* contentjson);
     extern char* apiv0_sendstateevent(int cid, char*  roomid, char* eventtype, char* statekey, char* contentjson);
     extern char* apiv0_stateevent(int cid, char* roomid, char* eventtype, char* statekey);

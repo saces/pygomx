@@ -217,31 +217,6 @@ func (mxc *MXClient) CreateDM(ctx context.Context, uid id.UserID) (resp *mautrix
 	return
 }
 
-type sendmessage_data struct {
-	RoomId  id.RoomID      `json:"roomid"`
-	Type    event.Type     `json:"type"`
-	Content map[string]any `json:"content"`
-}
-
-func (mxc *MXClient) SendRoomMessage(ctx context.Context, data string) (*mautrix.RespSendEvent, error) {
-	var smd sendmessage_data
-	err := json.Unmarshal([]byte(data), &smd)
-	if err != nil {
-		return nil, err
-	}
-
-	msgType := smd.Type
-	if msgType == (event.Type{}) {
-		msgType = event.EventMessage
-	}
-	resp, err := mxc.SendMessageEvent(ctx, smd.RoomId, msgType, smd.Content)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
-
-}
-
 func (mxc *MXClient) SelfSign(ctx context.Context) error {
 
 	log := zerolog.Ctx(ctx)

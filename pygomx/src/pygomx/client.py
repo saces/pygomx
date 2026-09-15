@@ -116,10 +116,6 @@ class _AsyncClient:
     async def _call(self, func, *args):
         return await asyncio.to_thread(func, *args)
 
-    async def _sendmessage(self, data_dict):
-        r = await self._call(ApiV0Api.sendmessage, self.client_id, data_dict)
-        return CheckApiResult(r)
-
     async def leaveroom(self, roomid):
         r = await self._call(ApiV0Api.leaveroom, self.client_id, roomid)
         CheckApiError(r)

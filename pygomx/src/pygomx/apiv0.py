@@ -30,10 +30,6 @@ class ApiV0Api:
         return _stringresult(lib.apiv0_joinedrooms(cid))
 
     @staticmethod
-    def sendmessage(cid, data):
-        return _stringresult(lib.apiv0_sendmessage(cid, _autodict(data)))
-
-    @staticmethod
     def startclient(cid):
         return _stringresult(lib.apiv0_startclient(cid))
 
