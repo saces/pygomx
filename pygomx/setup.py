@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 import os
 import subprocess
+import sys
 
 from setuptools import Command, setup
 from setuptools.command.build import build
@@ -79,8 +80,13 @@ class CustomCommand(Command):
             f"../pygomx/libmxclient{build_mode_ext}",
             ".",
         ]
-        # print(f"DEBUG: {' '.join(go_call) }")
-        subprocess.check_call(go_call, cwd="../libmxclient")
+        print(f"PYGOMX: starting: {' '.join(go_call)}", flush=True)
+        try:
+            subprocess.check_call(go_call, cwd="../libmxclient")
+        except (subprocess.CalledProcessError, OSError) as e:
+            print(f"PYGOMX: go build failed: {e}", flush=True)
+            sys.exit(1)
+        print(f"PYGOMX: go build ok -> libmxclient{build_mode_ext}", flush=True)
 
         if os.name == "nt" and os.getenv("PYGOMX_BUILD_MODE", "nope") == "shared":
             from setuptools._distutils.compilers.C.msvc import Compiler
