@@ -3,7 +3,6 @@
 import logging
 
 from .app import SMALApp
-from .config import SMALConfig
 
 logger = logging.getLogger(__name__)
 
@@ -15,10 +14,8 @@ logger = logging.getLogger(__name__)
 class SMALBot(SMALApp):
     """ """
 
-    def __init__(self, sigil, config=None):
-        super().__init__()
-        self._sigil = sigil
-        self._config = config if config is not None else SMALConfig.create_new()
+    def __init__(self, config=None):
+        super().__init__(config)
 
     async def sendmessage(self, roomid, text):
         content = {

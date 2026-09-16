@@ -1,6 +1,7 @@
 # Copyright (C) 2026 saces@c-base.org
 # SPDX-License-Identifier: AGPL-3.0-only
 import asyncio
+import dataclasses
 import json
 import logging
 import threading
@@ -9,6 +10,7 @@ from _pygomx import ffi, lib
 
 from .apiv0 import ApiV0Api
 from .errors import CheckApiError, CheckApiErrorOnly, CheckApiResult, PygomxAPIError
+from .util import _autodict
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +20,9 @@ class _AsyncClient:
     core binding
     """
 
-    def __init__(self):
+    def __init__(self, config=None):
         super().__init__()
-        self._createMXClient()
+        self._createMXClient(config)
         # create a c-handle for self and keep it alive
         self._ffi_selfhandle = ffi.new_handle(self)
         self._dispatch_loop = None
@@ -53,8 +55,11 @@ class _AsyncClient:
         if result.startswith(b"ERR:"):
             raise PygomxAPIError(result)
 
-    def _createMXClient(self):
-        r = lib.apiv0_createclient_pass(b".mxpass", b".", b"*", b"*", b"*")
+    def _createMXClient(self, config):
+        r = lib.apiv0_createclient_pass(
+            _autodict(None if config == None else dataclasses.asdict(config)),
+            b"*", b"*", b"*",
+        )
 
         result = ffi.string(r)
         lib.FreeCString(r)

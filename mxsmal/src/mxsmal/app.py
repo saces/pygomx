@@ -5,6 +5,8 @@ import asyncio
 
 from pygomx.client import _AsyncClient
 
+from .config import SMALConfig
+
 logger = logging.getLogger(__name__)
 
 """
@@ -27,8 +29,9 @@ class SMALApp(_AsyncClient):
 
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, config: SMALConfig = None):
+        self._config = config
+        super().__init__(config.client_config if config is not None else None)
 
     def run(self, sync=True):
         asyncio.run(self.main_loop(sync))

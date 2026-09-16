@@ -3,10 +3,12 @@
 import os
 import pathlib
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from enum import Enum
 
 import dacite
+
+from pygomx.config import PygomxCreateConfig
 
 
 class ConfigError(Exception):
@@ -153,4 +155,7 @@ class ConfigFile:
 
 @dataclass
 class SMALConfig(ConfigFile):
-    pass
+
+    sigil: str = "!"
+
+    client_config: PygomxCreateConfig = field(default_factory=PygomxCreateConfig)

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 import logging
 from mxsmal.bot import SMALBot
+from mxsmal.config import SMALConfig
 
 # setup logging, we want timestamps
 logging.basicConfig(
@@ -11,9 +12,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.INFO)
-
-
-DEFAULT_PREFIX = "!"
 
 
 class DemoBot(SMALBot):
@@ -80,7 +78,9 @@ class DemoBot(SMALBot):
 
 def main():
     # create and initialize the bot
-    bot = DemoBot(DEFAULT_PREFIX)
+
+    botConfig = SMALConfig()
+    bot = DemoBot(botConfig)
 
     # start the asyncio event loop and sync forever (listen for incommmig messages/events)
     bot.run()

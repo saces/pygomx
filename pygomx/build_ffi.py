@@ -52,8 +52,8 @@ ffibuilder.cdef(
     extern int   apiv0_deinitialize();
     extern char* apiv0_discover(char* user_id);
     extern char* apiv0_login(char* login_info);
-    extern char* apiv0_createclient(char* storage_path, char* hs, char* mxid, char* accessToken);
-    extern char* apiv0_createclient_pass(char* mxpassfile, char* storage_path, char* hs, char* localpart, char* domain);   
+    extern char* apiv0_createclient(char* create_config, char* hs, char* mxid, char* accessToken);
+    extern char* apiv0_createclient_pass(char* create_config, char* hs, char* localpart, char* domain);
     extern char* apiv0_set_on_event_handler(int cid, on_event_handler_ptr ptr, void* pobj);
     extern char* apiv0_set_on_message_handler(int cid, on_message_handler_ptr ptr, void* pobj);
     extern char* apiv0_set_on_sys_handler(int cid, on_sys_handler_ptr ptr, void* pobj);

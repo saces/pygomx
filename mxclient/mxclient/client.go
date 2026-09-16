@@ -269,7 +269,7 @@ func (mxc *MXClient) SelfSign(ctx context.Context) error {
 }
 
 // NewMXClient creates a new Matrix Client ready for syncing
-func NewMXClient(homeserverURL string, userID id.UserID, accessToken string) (*MXClient, error) {
+func NewMXClient(createConfig ClientCreateConfig, homeserverURL string, userID id.UserID, accessToken string) (*MXClient, error) {
 	client, err := mautrix.NewClient(homeserverURL, userID, accessToken)
 	if err != nil {
 		return nil, err
@@ -288,7 +288,7 @@ func NewMXClient(homeserverURL string, userID id.UserID, accessToken string) (*M
 
 	//fmt.Printf("Device ID: %s\n", client.DeviceID)
 
-	rawdb, err := dbutil.NewWithDialect("smalbot.db", "sqlite3")
+	rawdb, err := dbutil.NewWithDialect(createConfig.DBName, "sqlite3")
 	if err != nil {
 		return nil, err
 	}
@@ -345,12 +345,12 @@ func NewMXClient(homeserverURL string, userID id.UserID, accessToken string) (*M
 	return mxclient, nil
 }
 
-func CreateClient(storage_path string, url string, userID string, accessToken string) (*MXClient, error) {
-	return nil, fmt.Errorf("nope.")
+func CreateClient(createConfig ClientCreateConfig, url string, userID string, accessToken string) (*MXClient, error) {
+	return nil, fmt.Errorf("not implemented yet")
 }
 
-func CreateClientPass(mxpassfile_path string, storage_path string, url string, localpart string, domain string) (*MXClient, error) {
-	pf, err := mxpassfile.ReadPassfile(mxpassfile_path)
+func CreateClientPass(createConfig ClientCreateConfig, url string, localpart string, domain string) (*MXClient, error) {
+	pf, err := mxpassfile.ReadPassfile(createConfig.MXPassfilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +359,7 @@ func CreateClientPass(mxpassfile_path string, storage_path string, url string, l
 	e := pf.FindPasswordFill(url, localpart, domain)
 	if e != nil {
 		//fmt.Printf("mxpass: %#v\n", e)
-		return NewMXClient(e.Matrixhost, id.NewUserID(e.Localpart, e.Domain), e.Token)
+		return NewMXClient(createConfig, e.Matrixhost, id.NewUserID(e.Localpart, e.Domain), e.Token)
 	}
 	return nil, fmt.Errorf("nope.")
 }

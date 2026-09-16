@@ -81,6 +81,11 @@ func c2ContentJSON(contentjson *C.char) (contentJSON any, err error) {
 	return
 }
 
+func c2Config(config *C.char) (clientCreateConfig mxclient.ClientCreateConfig, err error) {
+	err = json.Unmarshal([]byte(C.GoString(config)), &clientCreateConfig)
+	return
+}
+
 func returnJSON(out any, err error) *C.char {
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
@@ -158,8 +163,8 @@ func (cli *CBClient) Set_on_sys_handler(fn C.on_sys_handler_ptr, pobj unsafe.Poi
 }
 
 // NewCBClient creates a new Matrix Client ready for syncing
-func NewCBClient(homeserverURL string, userID id.UserID, accessToken string) (*CBClient, error) {
-	client, err := mxclient.NewMXClient(homeserverURL, userID, accessToken)
+func NewCBClient(createConfig mxclient.ClientCreateConfig, homeserverURL string, userID id.UserID, accessToken string) (*CBClient, error) {
+	client, err := mxclient.NewMXClient(createConfig, homeserverURL, userID, accessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -331,8 +336,12 @@ func apiv0_login(login_info *C.char) *C.char {
 }
 
 //export apiv0_createclient
-func apiv0_createclient(storage_path *C.char, url *C.char, userID *C.char, accessToken *C.char) *C.char {
-	mxclient, err := mxclient.CreateClient(C.GoString(storage_path), C.GoString(url), C.GoString(userID), C.GoString(accessToken))
+func apiv0_createclient(createConfig *C.char, url *C.char, userID *C.char, accessToken *C.char) *C.char {
+	ccconf, err := c2Config(createConfig)
+	if err != nil {
+		return returnErr(err)
+	}
+	mxclient, err := mxclient.CreateClient(ccconf, C.GoString(url), C.GoString(userID), C.GoString(accessToken))
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
@@ -342,10 +351,14 @@ func apiv0_createclient(storage_path *C.char, url *C.char, userID *C.char, acces
 }
 
 //export apiv0_createclient_pass
-func apiv0_createclient_pass(mxpassfile_path *C.char, storage_path *C.char, url *C.char, localpart *C.char, domain *C.char) *C.char {
-	mxclient, err := mxclient.CreateClientPass(C.GoString(mxpassfile_path), C.GoString(storage_path), C.GoString(url), C.GoString(localpart), C.GoString(domain))
+func apiv0_createclient_pass(createConfig *C.char, url *C.char, localpart *C.char, domain *C.char) *C.char {
+	ccconf, err := c2Config(createConfig)
 	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
+		return returnErr(err)
+	}
+	mxclient, err := mxclient.CreateClientPass(ccconf, C.GoString(url), C.GoString(localpart), C.GoString(domain))
+	if err != nil {
+		return returnErr(err)
 	}
 	client := &CBClient{MXClient: mxclient}
 	mxclient.OnEvent = client.OnEvent
@@ -629,7 +642,7 @@ func apiv0_joinedrooms(cid C.int) *C.char {
 		IsDirect bool      `json:"is_direct"`
 	}
 
-	var roomList []roomListItem
+	var roomList []roomListItem = make([]roomListItem, 0)
 
 	for _, room := range resp.JoinedRooms {
 		roomList = append(roomList, roomListItem{RoomId: room, IsDirect: cli.IsDirectRoom(room)})

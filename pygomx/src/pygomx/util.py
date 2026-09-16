@@ -31,7 +31,7 @@ def _autodict(xdict):
         case dict():
             return json.dumps(xdict).encode(encoding="utf-8")
         case _:
-            raise TypeError("only str or bytes or dict allowed")
+            raise TypeError("only str or bytes or dict or None allowed")
 
 
 def _autolist(xlist):

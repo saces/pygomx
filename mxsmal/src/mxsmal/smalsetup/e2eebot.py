@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 import logging
 from mxsmal.bot import SMALBot
+from mxsmal.config import SMALConfig
 from pygomx.apiv0 import ApiV0Api
 
 logger = logging.getLogger(__name__)
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 class E2eeBot(SMALBot):
 
     def __init__(self):
-        super().__init__("¿")
+        super().__init__(SMALConfig(sigil="¿"))
 
     async def on_startup(self):
         ApiV0Api.self_sign(self.client_id)
