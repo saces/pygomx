@@ -34,9 +34,16 @@ def catch_exception(func=None, *, handle):
     default=".mxpass",
     help="mxpass file name",
 )
+@click.option(
+    "--homeserver",
+    "homeserver",
+    metavar="homeserverurl",
+    default="",
+    help="homeserver url",
+)
 @click.argument("mxid", metavar="MatrixID")
 @catch_exception(handle=(PygomxAPIError))
-def smalsetup(mxid, mxpassfile):
+def smalsetup(mxid, homeserver, mxpassfile):
     """Utility for creating smalbot mxpass files"""
 
     now = int(time.time())
@@ -45,7 +52,14 @@ def smalsetup(mxid, mxpassfile):
         if os.path.exists(mxpassfile):
             raise click.ClickException(f"file {mxpassfile} exists.")
 
-    discover_info = ApiV0.Discover(mxid)
+    if len(homeserver) == 0:
+        discover_info = ApiV0.Discover(mxid)
+    else:
+        discover_info = {
+            "homeserver": homeserver,
+            "user_id": mxid,
+            "login_name": mxid.split(":", 1)[0][1:],
+        }
 
     login_info = {
         "discover_info": discover_info,
