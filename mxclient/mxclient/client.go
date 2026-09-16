@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"mxclient/determinant/mxpassfile"
 	"slices"
+	"sync"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rs/zerolog"
@@ -25,18 +26,50 @@ import (
 
 type MXClient struct {
 	*mautrix.Client
-	OnEvent    func(string)
-	OnMessage  func(string)
-	OnSystem   func(string)
-	_directMap map[id.RoomID][]id.UserID
+	OnEvent     func(string)
+	OnMessage   func(string)
+	OnSystem    func(string)
+	directMapMu sync.RWMutex
+	_directMap  map[id.RoomID][]id.UserID
+}
+
+// _replaceDirectMap rebuilds the in-memory direct map from m.direct account
+// data. Guards _directMap with the write lock.
+func (mxc *MXClient) _replaceDirectMap(directChats event.DirectChatsEventContent) {
+	newDirectMap := make(map[id.RoomID][]id.UserID)
+	for uid, rooms := range directChats {
+		for _, room := range rooms {
+			newDirectMap[room] = append(newDirectMap[room], uid)
+		}
+	}
+	mxc.directMapMu.Lock()
+	mxc._directMap = newDirectMap
+	mxc.directMapMu.Unlock()
 }
 
 func (mxc *MXClient) _onAccountDataDM(ctx context.Context, evt *event.Event) { // event.DirectChatsEventContent
-	// TODO
-	fmt.Printf("\nTODO: Got event account data dm: %#v\n", evt)
+	directChats, ok := evt.Content.Parsed.(*event.DirectChatsEventContent)
+	if !ok {
+		return
+	}
+	mxc._replaceDirectMap(*directChats)
+
+	out, err := json.Marshal(evt)
+	if err != nil {
+		log.Error().Err(err).Str("id", evt.ID.String()).Msg("Marshalling error")
+		return
+	}
+	if mxc.OnEvent == nil {
+		log.Fatal().Str("id", evt.ID.String()).Msg("on_event callback not set")
+	}
+	mxc.OnEvent(string(out))
+	log.Debug().Msg("updated direct map from account data")
 }
 
 func (mxc *MXClient) AddDirectRoom(uid id.UserID, roomid id.RoomID) {
+	mxc.directMapMu.Lock()
+	defer mxc.directMapMu.Unlock()
+
 	room, ok := mxc._directMap[roomid]
 	if ok {
 		if slices.Contains(room, uid) {
@@ -50,7 +83,14 @@ func (mxc *MXClient) AddDirectRoom(uid id.UserID, roomid id.RoomID) {
 	}
 }
 
+func (mxc *MXClient) AddDirectRoomStore(uid id.UserID, roomid id.RoomID) error {
+	mxc.AddDirectRoom(uid, roomid)
+	return mxc._storeDirectMap()
+}
+
 func (mxc *MXClient) IsDirectRoom(roomid id.RoomID) bool {
+	mxc.directMapMu.RLock()
+	defer mxc.directMapMu.RUnlock()
 	_, ok := mxc._directMap[roomid]
 	return ok
 }
@@ -59,27 +99,38 @@ func (mxc *MXClient) _loadDirectMap() error {
 	var directChats event.DirectChatsEventContent
 	err := mxc.GetAccountData(context.Background(), event.AccountDataDirectChats.Type, &directChats)
 	if err != nil {
+		// a fresh account has no m.direct account data yet (M_NOT_FOUND); that
+		// just means an empty direct map, not a failure to initialize
+		if errors.Is(err, mautrix.MNotFound) {
+			log.Debug().Msg("no direct chats account data yet")
+			return nil
+		}
 		return err
 	}
 
-	new_directMap := make(map[id.RoomID][]id.UserID)
-	for uid, rooms := range directChats {
-		for _, room := range rooms {
-			new_directMap[room] = append(new_directMap[room], uid)
-		}
-	}
-	mxc._directMap = new_directMap
+	mxc._replaceDirectMap(directChats)
 	return nil
 }
 
-func (mxc *MXClient) _storeDirectMap() error {
+// _directMapToChats returns a snapshot of _directMap converted back to
+// m.direct account data shape. Reads _directMap under the read lock.
+func (mxc *MXClient) _directMapToChats() event.DirectChatsEventContent {
 	directChats := make(event.DirectChatsEventContent)
 
+	mxc.directMapMu.RLock()
 	for room, uids := range mxc._directMap {
 		for _, uid := range uids {
 			directChats[uid] = append(directChats[uid], room)
 		}
 	}
+	mxc.directMapMu.RUnlock()
+
+	return directChats
+}
+
+func (mxc *MXClient) _storeDirectMap() error {
+	directChats := mxc._directMapToChats()
+
 	err := mxc.SetAccountData(context.Background(), event.AccountDataDirectChats.Type, &directChats)
 	if err != nil {
 		return err
@@ -88,6 +139,9 @@ func (mxc *MXClient) _storeDirectMap() error {
 }
 
 func (mxc *MXClient) GetUserDM(mxid string) []string {
+	mxc.directMapMu.RLock()
+	defer mxc.directMapMu.RUnlock()
+
 	var res = make([]string, 0)
 
 	for room, uids := range mxc._directMap {
@@ -180,14 +234,17 @@ func (mxc *MXClient) LeaveRoomAndForget(ctx context.Context, room id.RoomID) err
 		return err
 	}
 	if mxc.IsDirectRoom(room) {
+		mxc.directMapMu.Lock()
 		delete(mxc._directMap, room)
-		mxc._storeDirectMap()
+		mxc.directMapMu.Unlock()
+		err = mxc._storeDirectMap()
 	}
-	_, err = mxc.ForgetRoom(ctx, room)
 	if err != nil {
 		return err
 	}
-	return nil
+	_, err = mxc.ForgetRoom(ctx, room)
+
+	return err
 }
 
 func (mxc *MXClient) CreateDM(ctx context.Context, uid id.UserID) (resp *mautrix.RespCreateRoom, err error) {
@@ -330,7 +387,10 @@ func NewMXClient(createConfig ClientCreateConfig, homeserverURL string, userID i
 
 	client.Store = cryptoStore
 
-	mxclient := &MXClient{client, nil, nil, nil, make(map[id.RoomID][]id.UserID)}
+	mxclient := &MXClient{
+		Client:     client,
+		_directMap: make(map[id.RoomID][]id.UserID),
+	}
 
 	syncer.ParseEventContent = true
 	syncer.OnEvent(client.StateStoreSyncHandler)
@@ -340,9 +400,8 @@ func NewMXClient(createConfig ClientCreateConfig, homeserverURL string, userID i
 	syncer.OnEventType(event.AccountDataDirectChats, mxclient._onAccountDataDM)
 	syncer.OnEventType(event.EventRedaction, mxclient._onMessage)
 
-	mxclient._loadDirectMap()
-
-	return mxclient, nil
+	err = mxclient._loadDirectMap()
+	return mxclient, err
 }
 
 func CreateClient(createConfig ClientCreateConfig, url string, userID string, accessToken string) (*MXClient, error) {

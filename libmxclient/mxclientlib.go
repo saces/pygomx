@@ -764,4 +764,21 @@ func apiv0_setoptions(cid C.int, opts *C.char) C.int {
 	return 0
 }
 
+//export apiv0_add_direct_room
+func apiv0_add_direct_room(cid C.int, uid *C.char, roomid *C.char) *C.char {
+	userID, err := c2UserID(uid)
+	if err != nil {
+		return returnErr(err)
+	}
+	roomID, err := c2RoomID(roomid)
+	if err != nil {
+		return returnErr(err)
+	}
+	cli, err := getClient(int(cid))
+	if err != nil {
+		returnErr(err)
+	}
+	return returnErr(cli.AddDirectRoomStore(userID, roomID))
+}
+
 func main() {}

@@ -80,6 +80,7 @@ ffibuilder.cdef(
     extern char* apiv0_listclients();
     extern char* apiv0_getoptions(int cid);
     extern int   apiv0_setoptions(int cid, char* opts);
+    extern char* apiv0_add_direct_room(int cid, char* uid, char* roomid);
     """
 )
 

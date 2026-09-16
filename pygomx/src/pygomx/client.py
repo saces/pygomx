@@ -202,6 +202,10 @@ class _AsyncClient:
         r = await self._call(ApiV0Api.getuserdm, self.client_id, userid)
         return CheckApiResult(r)
 
+    async def add_direct_room(self, userid, roomid):
+        r = await self._call(ApiV0Api.add_direct_room(self.client_id, userid, roomid))
+        return CheckApiError(r)
+
     def _log_dispatch_error(self, fut):
         if fut.cancelled():
             return
