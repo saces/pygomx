@@ -10,6 +10,7 @@ import (
 	"mxclient/mxapi"
 	"mxclient/mxclient"
 	"mxclient/mxutils"
+	"sync"
 	"sync/atomic"
 	"unsafe"
 
@@ -174,9 +175,23 @@ func NewCBClient(createConfig mxclient.ClientCreateConfig, homeserverURL string,
 /*
 account/client management
 */
-var cclients []*CBClient
+var (
+	cclientsMu sync.RWMutex
+	cclients   []*CBClient
+)
+
+// addClient registers a client and returns its stable id. Indexes are
+// append-only (removeclient is a stub), so readers may keep the id.
+func addClient(cli *CBClient) int {
+	cclientsMu.Lock()
+	defer cclientsMu.Unlock()
+	cclients = append(cclients, cli)
+	return len(cclients) - 1
+}
 
 func getClient(id int) (*CBClient, error) {
+	cclientsMu.RLock()
+	defer cclientsMu.RUnlock()
 	if id < 0 || id >= len(cclients) {
 		return nil, fmt.Errorf("index out of bounds: '%d'", id)
 	}
@@ -346,8 +361,8 @@ func apiv0_createclient(createConfig *C.char, url *C.char, userID *C.char, acces
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
 	client := &CBClient{MXClient: mxclient}
-	cclients = append(cclients, client)
-	return C.CString(fmt.Sprintf("{ \"id:\"SUCESS. ID=%d\n", len(cclients)))
+	id := addClient(client)
+	return C.CString(fmt.Sprintf("{ \"id:\"SUCESS. ID=%d\n", id+1))
 }
 
 //export apiv0_createclient_pass
@@ -364,8 +379,8 @@ func apiv0_createclient_pass(createConfig *C.char, url *C.char, localpart *C.cha
 	mxclient.OnEvent = client.OnEvent
 	mxclient.OnMessage = client.OnMessage
 	mxclient.OnSystem = client.OnSystem
-	cclients = append(cclients, client)
-	out, err := json.Marshal(map[string]any{"id": len(cclients) - 1, "userid": client.UserID.String(), "deviceid": client.DeviceID.String()})
+	id := addClient(client)
+	out, err := json.Marshal(map[string]any{"id": id, "userid": client.UserID.String(), "deviceid": client.DeviceID.String()})
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERR: %v", err))
 	}
