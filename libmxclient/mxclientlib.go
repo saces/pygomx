@@ -327,9 +327,6 @@ func apiv0_discover(userid *C.char) *C.char {
 		return returnErr(err)
 	}
 	result, err := mxapi.Discover(userID)
-	if err != nil {
-		return C.CString(fmt.Sprintf("ERR: %v", err))
-	}
 	return returnJSON(result, err)
 }
 
